@@ -1,0 +1,27 @@
+types:
+  PlayerName: string
+  Board: PlayerInfo[]
+  Point:
+    x: number
+    y: number
+  PlayerInfo:
+    name: PlayerName
+    location: Point
+  PlayerState:
+    board: Board
+    target?: Point
+    updatedAt: number
+
+methods:
+  createGame:
+  updateTarget:
+    target: Point
+
+auth:
+  anonymous:
+    separator: "-"
+
+userState: PlayerState
+initialize: createGame
+error: string
+tick: true

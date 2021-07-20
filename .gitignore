@@ -1,0 +1,4 @@
+.rtag
+node_modules
+.env
+dist

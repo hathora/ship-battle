@@ -44,7 +44,7 @@ async function setupApp() {
   requestAnimationFrame(draw);
 
   const app = new PIXI.Application({ resizeTo: window });
-  app.renderer.view.addEventListener("click", (e) => {
+  app.renderer.view.addEventListener("pointerdown", (e) => {
     client.updateTarget({ target: { x: e.offsetX, y: e.offsetY } });
   });
   return app.view;

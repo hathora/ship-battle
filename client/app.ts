@@ -1,11 +1,11 @@
 import * as PIXI from "pixi.js";
 import { RtagClient } from "./.rtag/client";
 import { PlayerName, PlayerState } from "./.rtag/types";
-import { Player } from "./Player";
+import { Entity } from "./Entity";
 
 const BUFFER_TIME = 140;
 
-const players: Map<PlayerName, { player: Player; sprite: PIXI.Sprite }> = new Map();
+const players: Map<PlayerName, { entity: Entity; sprite: PIXI.Sprite }> = new Map();
 const waterTexture = PIXI.Texture.from("water.png");
 const shipTexture = PIXI.Texture.from("ship.png");
 
@@ -25,17 +25,17 @@ async function setupApp() {
         const shipSprite = new PIXI.Sprite(shipTexture);
         shipSprite.anchor.set(0.5);
         app.stage.addChild(shipSprite);
-        players.set(player.name, { player: new Player(player.name, player.location), sprite: shipSprite });
+        players.set(player.name, { entity: new Entity(player.location), sprite: shipSprite });
       } else {
-        players.get(player.name)!.player.updateTarget(player.location, state.updatedAt + BUFFER_TIME);
+        players.get(player.name)!.entity.updateTarget(player.location, state.updatedAt + BUFFER_TIME);
       }
     });
   });
 
   const draw = () => {
     const now = Date.now();
-    players.forEach(({ player, sprite }) => {
-      const { x, y } = player.getCurrPos(now);
+    players.forEach(({ entity, sprite }) => {
+      const { x, y } = entity.getCurrPos(now);
       if (x !== sprite.x && y !== sprite.y) {
         sprite.rotation = Math.atan2(y - sprite.y, x - sprite.x) - Math.PI / 2;
         sprite.x = x;

@@ -1,31 +1,26 @@
 import { Point } from "./.rtag/types";
 
-export class Player {
-  name: string;
+export class Entity {
   restingLocation: Point;
   clientStartTime: number | undefined;
   buffer: { location: Point; time: number }[] = [];
 
-  constructor(name: string, location: Point) {
-    this.name = name;
+  constructor(location: Point) {
     this.restingLocation = location;
   }
 
   updateTarget(target: Point, time: number) {
     if (target.x !== this.restingLocation.x || target.y !== this.restingLocation.y) {
       this.buffer.push({ location: target, time });
-      console.log("[updateTarget]");
     }
   }
 
   getCurrPos(now: number) {
     if (this.buffer.length === 0) {
-      console.log("buffer empty");
       return this.restingLocation;
     }
 
     if (this.buffer[this.buffer.length - 1].time <= now) {
-      console.log("buffer emptied");
       this.clientStartTime = undefined;
       this.restingLocation = this.buffer[this.buffer.length - 1].location;
       this.buffer = [];
@@ -34,7 +29,6 @@ export class Player {
 
     for (let i = this.buffer.length - 1; i >= 0; i--) {
       if (this.buffer[i].time <= now) {
-        console.log("server interpolation");
         this.clientStartTime = undefined;
         const [from, to] = [this.buffer[i], this.buffer[i + 1]];
         this.buffer.splice(0, i);
@@ -42,7 +36,6 @@ export class Player {
       }
     }
 
-    console.log("client interpolation");
     if (this.clientStartTime === undefined) {
       this.clientStartTime = now;
     }

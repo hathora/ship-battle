@@ -20,13 +20,13 @@ async function setupApp() {
   const token = sessionStorage.getItem("token")!;
 
   const app = new PIXI.Application();
-  const waterSprite = new PIXI.TilingSprite(waterTexture, 800, 600);
-  app.stage.addChild(waterSprite);
+  const background = new PIXI.TilingSprite(waterTexture, 800, 600);
+  app.stage.addChild(background);
 
   const client = await getClient(token, (state) => {
     state.entities.forEach(({ id, type, location }) => {
       if (!entities.has(id)) {
-        const sprite = new PIXI.Sprite(getTexture(type));
+        const sprite = new PIXI.Sprite(getTextureForType(type));
         sprite.anchor.set(0.5);
         app.stage.addChild(sprite);
         entities.set(id, { entity: new Entity(location), sprite });
@@ -40,7 +40,7 @@ async function setupApp() {
     client.updateTarget({ target: { x: e.offsetX, y: e.offsetY } });
   });
 
-  const draw = () => {
+  app.ticker.add(() => {
     const now = Date.now();
     entities.forEach(({ entity, sprite }) => {
       const { x, y } = entity.getCurrPos(now);
@@ -50,9 +50,7 @@ async function setupApp() {
         sprite.y = y;
       }
     });
-    requestAnimationFrame(draw);
-  };
-  requestAnimationFrame(draw);
+  });
 
   return app.view;
 }
@@ -68,7 +66,7 @@ async function getClient(token: string, onStateChange: (state: PlayerState) => v
   }
 }
 
-function getTexture(type: EntityType) {
+function getTextureForType(type: EntityType) {
   switch (type) {
     case EntityType.SHIP:
       return shipTexture;

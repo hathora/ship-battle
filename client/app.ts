@@ -37,7 +37,7 @@ async function setupApp() {
   });
 
   app.view.addEventListener("pointerdown", (e) => {
-    client.updateTarget({ target: { x: e.offsetX, y: e.offsetY } });
+    client.updateShipTarget({ target: { x: e.offsetX, y: e.offsetY } });
   });
 
   app.ticker.add(() => {

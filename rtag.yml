@@ -11,12 +11,11 @@ types:
     location: Point
   PlayerState:
     entities: Entity[]
-    target?: Point
     updatedAt: number
 
 methods:
   createGame:
-  updateTarget:
+  updateShipTarget:
     target: Point
 
 auth:

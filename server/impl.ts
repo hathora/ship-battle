@@ -1,65 +1,55 @@
 import { Methods, Context, Result } from "./.rtag/methods";
-import {
-  UserData,
-  PlayerState,
-  ICreateGameRequest,
-  IUpdateTargetRequest,
-  PlayerName,
-  Point,
-  EntityType,
-} from "./.rtag/types";
+import { UserData, PlayerState, ICreateGameRequest, IUpdateShipTargetRequest, Point, EntityType } from "./.rtag/types";
 
-interface InternalPlayerInfo {
-  name: PlayerName;
+interface InternalEntity {
+  id: string;
+  type: EntityType;
   location: Point;
-  target?: Point;
+  target: Point;
 }
 
 interface InternalState {
-  players: InternalPlayerInfo[];
+  entities: InternalEntity[];
   updatedAt: number;
 }
 
-const SPEED = 200;
+const ENTITY_SPEEDS: Map<EntityType, number> = new Map([[EntityType.SHIP, 200]]);
 
 export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
     return {
-      players: [{ name: user.name, location: { x: 0, y: 0 } }],
+      entities: [{ id: user.name, type: EntityType.SHIP, location: { x: 0, y: 0 }, target: { x: 0, y: 0 } }],
       updatedAt: 0,
     };
   }
-  updateTarget(state: InternalState, user: UserData, ctx: Context, request: IUpdateTargetRequest): Result {
-    const player = state.players.find((p) => p.name == user.name);
-    if (player === undefined) {
-      state.players.push({ name: user.name, location: request.target });
+  updateShipTarget(state: InternalState, user: UserData, ctx: Context, request: IUpdateShipTargetRequest): Result {
+    const entity = state.entities.find((p) => p.id == user.name);
+    if (entity === undefined) {
+      state.entities.push({ id: user.name, type: EntityType.SHIP, location: request.target, target: request.target });
     } else {
-      player.target = request.target;
+      entity.target = request.target;
     }
     return Result.modified();
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
-    const player = state.players.find((p) => p.name == user.name);
     return {
-      entities: state.players.map(({ name, location }) => ({ id: name, type: EntityType.SHIP, location })),
-      target: player?.target,
+      entities: state.entities.map(({ id, type, location }) => ({ id, type, location })),
       updatedAt: state.updatedAt,
     };
   }
   onTick(state: InternalState, ctx: Context, timeDelta: number): Result {
     let modified = false;
-    state.players.forEach((player) => {
-      if (player.target !== undefined) {
-        const dx = player.target.x - player.location.x;
-        const dy = player.target.y - player.location.y;
+    state.entities.forEach((entity) => {
+      const dx = entity.target.x - entity.location.x;
+      const dy = entity.target.y - entity.location.y;
+      if (dx !== 0 || dy !== 0) {
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const pixelsToMove = SPEED * timeDelta;
+        const pixelsToMove = ENTITY_SPEEDS.get(entity.type)! * timeDelta;
         if (dist <= pixelsToMove) {
-          player.location = player.target;
-          player.target = undefined;
+          entity.location = entity.target;
         } else {
-          player.location.x += (dx / dist) * pixelsToMove;
-          player.location.y += (dy / dist) * pixelsToMove;
+          entity.location.x += (dx / dist) * pixelsToMove;
+          entity.location.y += (dy / dist) * pixelsToMove;
         }
         state.updatedAt = Date.now();
         modified = true;

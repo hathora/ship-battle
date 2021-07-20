@@ -5,7 +5,9 @@ import { Player } from "./Player";
 
 const BUFFER_TIME = 140;
 
-const players: Map<PlayerName, { player: Player; gr: PIXI.Graphics }> = new Map();
+const players: Map<PlayerName, { player: Player; sprite: PIXI.Sprite }> = new Map();
+const waterTexture = PIXI.Texture.from("water.png");
+const shipTexture = PIXI.Texture.from("ship.png");
 
 setupApp().then((view) => {
   document.body.appendChild(view);
@@ -20,12 +22,9 @@ async function setupApp() {
   const client = await getClient(token, (state) => {
     state.board.forEach((player) => {
       if (!players.has(player.name)) {
-        const gr = new PIXI.Graphics();
-        gr.beginFill(0xffffff);
-        gr.drawCircle(0, 0, 30);
-        gr.endFill();
-        app.stage.addChild(gr);
-        players.set(player.name, { player: new Player(player.name, player.location), gr });
+        const shipSprite = new PIXI.Sprite(shipTexture);
+        app.stage.addChild(shipSprite);
+        players.set(player.name, { player: new Player(player.name, player.location), sprite: shipSprite });
       } else {
         players.get(player.name)!.player.updateTarget(player.location, state.updatedAt + BUFFER_TIME);
       }
@@ -34,16 +33,18 @@ async function setupApp() {
 
   const draw = () => {
     const now = Date.now();
-    players.forEach(({ player, gr }) => {
+    players.forEach(({ player, sprite }) => {
       const { x, y } = player.getCurrPos(now);
-      gr.x = x;
-      gr.y = y;
+      sprite.x = x - sprite.width / 2;
+      sprite.y = y - sprite.height / 2;
     });
     requestAnimationFrame(draw);
   };
   requestAnimationFrame(draw);
 
-  const app = new PIXI.Application({ resizeTo: window });
+  const app = new PIXI.Application();
+  const waterSprite = new PIXI.TilingSprite(waterTexture, 800, 600);
+  app.stage.addChild(waterSprite);
   app.renderer.view.addEventListener("pointerdown", (e) => {
     client.updateTarget({ target: { x: e.offsetX, y: e.offsetY } });
   });

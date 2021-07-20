@@ -23,6 +23,7 @@ async function setupApp() {
     state.board.forEach((player) => {
       if (!players.has(player.name)) {
         const shipSprite = new PIXI.Sprite(shipTexture);
+        shipSprite.anchor.set(0.5);
         app.stage.addChild(shipSprite);
         players.set(player.name, { player: new Player(player.name, player.location), sprite: shipSprite });
       } else {
@@ -35,8 +36,11 @@ async function setupApp() {
     const now = Date.now();
     players.forEach(({ player, sprite }) => {
       const { x, y } = player.getCurrPos(now);
-      sprite.x = x - sprite.width / 2;
-      sprite.y = y - sprite.height / 2;
+      if (x !== sprite.x && y !== sprite.y) {
+        sprite.rotation = Math.atan2(y - sprite.y, x - sprite.x) - Math.PI / 2;
+        sprite.x = x;
+        sprite.y = y;
+      }
     });
     requestAnimationFrame(draw);
   };

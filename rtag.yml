@@ -1,14 +1,16 @@
 types:
   PlayerName: string
-  Board: PlayerInfo[]
+  EntityType:
+    - SHIP
   Point:
     x: number
     y: number
-  PlayerInfo:
-    name: PlayerName
+  Entity:
+    id: string
+    type: EntityType
     location: Point
   PlayerState:
-    board: Board
+    entities: Entity[]
     target?: Point
     updatedAt: number
 

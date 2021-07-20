@@ -1,5 +1,13 @@
 import { Methods, Context, Result } from "./.rtag/methods";
-import { UserData, PlayerState, ICreateGameRequest, IUpdateTargetRequest, PlayerName, Point } from "./.rtag/types";
+import {
+  UserData,
+  PlayerState,
+  ICreateGameRequest,
+  IUpdateTargetRequest,
+  PlayerName,
+  Point,
+  EntityType,
+} from "./.rtag/types";
 
 interface InternalPlayerInfo {
   name: PlayerName;
@@ -33,7 +41,7 @@ export class Impl implements Methods<InternalState> {
   getUserState(state: InternalState, user: UserData): PlayerState {
     const player = state.players.find((p) => p.name == user.name);
     return {
-      board: state.players.map(({ name, location }) => ({ name, location })),
+      entities: state.players.map(({ name, location }) => ({ id: name, type: EntityType.SHIP, location })),
       target: player?.target,
       updatedAt: state.updatedAt,
     };

@@ -8,6 +8,7 @@ const BUFFER_TIME = 140;
 const entities: Map<string, { entity: Entity; sprite: PIXI.Sprite }> = new Map();
 const waterTexture = PIXI.Texture.from("water.png");
 const shipTexture = PIXI.Texture.from("ship.png");
+const cannonBallTexure = PIXI.Texture.from("cannonBall.png");
 
 setupApp().then((view) => {
   document.body.appendChild(view);
@@ -37,7 +38,14 @@ async function setupApp() {
   });
 
   app.view.addEventListener("pointerdown", (e) => {
-    client.updateShipTarget({ target: { x: e.offsetX, y: e.offsetY } });
+    if (e.button !== 0) {
+      client.fireCannon({ target: { x: e.offsetX, y: e.offsetY } });
+    } else {
+      client.moveShip({ target: { x: e.offsetX, y: e.offsetY } });
+    }
+  });
+  app.view.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
   });
 
   app.ticker.add(() => {
@@ -70,5 +78,7 @@ function getTextureForType(type: EntityType) {
   switch (type) {
     case EntityType.SHIP:
       return shipTexture;
+    case EntityType.CANNON_BALL:
+      return cannonBallTexure;
   }
 }

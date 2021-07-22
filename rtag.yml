@@ -2,6 +2,7 @@ types:
   PlayerName: string
   EntityType:
     - SHIP
+    - CANNON_BALL
   Point:
     x: number
     y: number
@@ -15,7 +16,9 @@ types:
 
 methods:
   createGame:
-  updateShipTarget:
+  moveShip:
+    target: Point
+  fireCannon:
     target: Point
 
 auth:

@@ -1,5 +1,13 @@
 import { Methods, Context, Result } from "./.rtag/methods";
-import { UserData, PlayerState, ICreateGameRequest, IUpdateShipTargetRequest, Point, EntityType } from "./.rtag/types";
+import {
+  UserData,
+  PlayerState,
+  Point,
+  EntityType,
+  ICreateGameRequest,
+  IMoveShipRequest,
+  IFireCannonRequest,
+} from "./.rtag/types";
 
 interface InternalEntity {
   id: string;
@@ -13,7 +21,10 @@ interface InternalState {
   updatedAt: number;
 }
 
-const ENTITY_SPEEDS: Map<EntityType, number> = new Map([[EntityType.SHIP, 200]]);
+const ENTITY_SPEEDS: Map<EntityType, number> = new Map([
+  [EntityType.SHIP, 200],
+  [EntityType.CANNON_BALL, 400],
+]);
 
 export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
@@ -22,13 +33,22 @@ export class Impl implements Methods<InternalState> {
       updatedAt: 0,
     };
   }
-  updateShipTarget(state: InternalState, user: UserData, ctx: Context, request: IUpdateShipTargetRequest): Result {
+  moveShip(state: InternalState, user: UserData, ctx: Context, request: IMoveShipRequest): Result {
     const entity = state.entities.find((p) => p.id == user.name);
     if (entity === undefined) {
       state.entities.push({ id: user.name, type: EntityType.SHIP, location: request.target, target: request.target });
     } else {
       entity.target = request.target;
     }
+    return Result.modified();
+  }
+  fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Result {
+    state.entities.push({
+      id: ctx.rand().toString(36).substring(2),
+      type: EntityType.CANNON_BALL,
+      location: { ...state.entities.find((entity) => entity.id === user.name)!.location },
+      target: request.target,
+    });
     return Result.modified();
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
@@ -51,7 +71,7 @@ export class Impl implements Methods<InternalState> {
           entity.location.x += (dx / dist) * pixelsToMove;
           entity.location.y += (dy / dist) * pixelsToMove;
         }
-        state.updatedAt = Date.now();
+        state.updatedAt = ctx.time();
         modified = true;
       }
     });

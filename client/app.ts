@@ -25,7 +25,9 @@ async function setupApp() {
   app.stage.addChild(background);
 
   const client = await getClient(token, (state) => {
+    const updatedEntities = new Set();
     state.entities.forEach(({ id, type, location }) => {
+      updatedEntities.add(id);
       if (!entities.has(id)) {
         const sprite = new PIXI.Sprite(getTextureForType(type));
         sprite.anchor.set(0.5);
@@ -35,6 +37,12 @@ async function setupApp() {
         entities.get(id)!.entity.updateTarget(location, state.updatedAt + BUFFER_TIME);
       }
     });
+    for (const entityId of entities.keys()) {
+      if (!updatedEntities.has(entityId)) {
+        entities.get(entityId)!.sprite.destroy();
+        entities.delete(entityId);
+      }
+    }
   });
 
   app.view.addEventListener("pointerdown", (e) => {

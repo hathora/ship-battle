@@ -59,7 +59,7 @@ export class Impl implements Methods<InternalState> {
   }
   onTick(state: InternalState, ctx: Context, timeDelta: number): Result {
     let modified = false;
-    state.entities.forEach((entity) => {
+    state.entities.forEach((entity, idx) => {
       const dx = entity.target.x - entity.location.x;
       const dy = entity.target.y - entity.location.y;
       if (dx !== 0 || dy !== 0) {
@@ -67,6 +67,9 @@ export class Impl implements Methods<InternalState> {
         const pixelsToMove = ENTITY_SPEEDS.get(entity.type)! * timeDelta;
         if (dist <= pixelsToMove) {
           entity.location = entity.target;
+          if (entity.type === EntityType.CANNON_BALL) {
+            state.entities.splice(idx, 1);
+          }
         } else {
           entity.location.x += (dx / dist) * pixelsToMove;
           entity.location.y += (dy / dist) * pixelsToMove;

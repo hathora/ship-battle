@@ -5,6 +5,8 @@ import { Entity } from "./Entity";
 
 const BUFFER_TIME = 140;
 
+const client = new RtagClient(import.meta.env.VITE_APP_ID);
+
 const entities: Map<string, { entity: Entity; sprite: PIXI.Sprite }> = new Map();
 const waterTexture = PIXI.Texture.from("water.png");
 const shipTexture = PIXI.Texture.from("ship.png");
@@ -16,7 +18,7 @@ setupApp().then((view) => {
 
 async function setupApp() {
   if (sessionStorage.getItem("token") === null) {
-    sessionStorage.setItem("token", await RtagClient.loginAnonymous());
+    sessionStorage.setItem("token", await client.loginAnonymous());
   }
   const token = sessionStorage.getItem("token")!;
 
@@ -24,7 +26,7 @@ async function setupApp() {
   const background = new PIXI.TilingSprite(waterTexture, 800, 600);
   app.stage.addChild(background);
 
-  const client = await getClient(token, (state) => {
+  const connection = await getClient(token, (state) => {
     const updatedEntities = new Set();
     state.entities.forEach(({ id, type, location }) => {
       updatedEntities.add(id);
@@ -47,9 +49,9 @@ async function setupApp() {
 
   app.view.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) {
-      client.fireCannon({ target: { x: e.offsetX, y: e.offsetY } });
+      connection.fireCannon({ target: { x: e.offsetX, y: e.offsetY } });
     } else {
-      client.moveShip({ target: { x: e.offsetX, y: e.offsetY } });
+      connection.moveShip({ target: { x: e.offsetX, y: e.offsetY } });
     }
   });
   app.view.addEventListener("contextmenu", (e) => {
@@ -74,11 +76,11 @@ async function setupApp() {
 async function getClient(token: string, onStateChange: (state: PlayerState) => void) {
   if (window.location.pathname.length > 1) {
     const stateId = window.location.pathname.split("/").pop()!;
-    return RtagClient.connectExisting(import.meta.env.VITE_APP_ID, token, stateId, onStateChange);
+    return client.connectExisting(token, stateId, onStateChange);
   } else {
-    const { stateId, client } = await RtagClient.connectNew(import.meta.env.VITE_APP_ID, token, {}, onStateChange);
-    window.history.pushState({}, "", `/${stateId}`);
-    return client;
+    const connection = await client.connectNew(token, {}, onStateChange);
+    window.history.pushState({}, "", `/${connection.stateId}`);
+    return connection;
   }
 }
 

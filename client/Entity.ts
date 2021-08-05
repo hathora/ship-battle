@@ -55,7 +55,9 @@ function lerp(
 ) {
   const dx = to.location.x - from.location.x;
   const dy = to.location.y - from.location.y;
+  const dAngle = to.angle - from.angle;
   const pctElapsed = (now - from.time) / (to.time - from.time);
   const location = { x: from.location.x + dx * pctElapsed, y: from.location.y + dy * pctElapsed };
-  return { location, angle: to.angle };
+  const angle = from.angle + dAngle * pctElapsed;
+  return { location, angle };
 }

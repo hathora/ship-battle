@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { RtagClient } from "./.rtag/client";
-import { EntityType, PlayerState } from "./.rtag/types";
+import { PlayerState, Rotation } from "./.rtag/types";
 import { Entity } from "./Entity";
 
 const BUFFER_TIME = 140;
@@ -27,35 +27,40 @@ async function setupApp() {
   app.stage.addChild(background);
 
   const connection = await getClient(token, (state) => {
-    const updatedEntities = new Set();
-    state.entities.forEach(({ id, type, location, angle }) => {
-      updatedEntities.add(id);
-      if (!entities.has(id)) {
-        const sprite = new PIXI.Sprite(getTextureForType(type));
+    state.ships.forEach((ship) => {
+      if (!entities.has(ship.player)) {
+        const sprite = new PIXI.Sprite(shipTexture);
         sprite.anchor.set(0.5);
         app.stage.addChild(sprite);
-        entities.set(id, { entity: new Entity(location, angle), sprite });
+        entities.set(ship.player, { entity: new Entity(ship.location, ship.angle), sprite });
       } else {
-        entities.get(id)!.entity.updateTarget(location, angle, state.updatedAt + BUFFER_TIME);
+        entities.get(ship.player)!.entity.updateTarget(ship.location, ship.angle, state.updatedAt + BUFFER_TIME);
       }
     });
-    for (const entityId of entities.keys()) {
-      if (!updatedEntities.has(entityId)) {
-        entities.get(entityId)!.sprite.destroy();
-        entities.delete(entityId);
+    state.cannonBalls.forEach((cannonBall) => {
+      if (!entities.has(cannonBall.id)) {
+        const sprite = new PIXI.Sprite(cannonBallTexure);
+        sprite.anchor.set(0.5);
+        app.stage.addChild(sprite);
+        entities.set(cannonBall.id, { entity: new Entity(cannonBall.location, cannonBall.angle), sprite });
+      } else {
+        entities
+          .get(cannonBall.id)!
+          .entity.updateTarget(cannonBall.location, cannonBall.angle, state.updatedAt + BUFFER_TIME);
       }
-    }
+    });
   });
 
-  app.view.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0) {
-      connection.fireCannon({ target: { x: e.offsetX, y: e.offsetY } });
-    } else {
-      connection.moveShip({ target: { x: e.offsetX, y: e.offsetY } });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") {
+      connection.setRotation({ rotation: Rotation.RIGHT });
+    } else if (e.key === "ArrowLeft") {
+      connection.setRotation({ rotation: Rotation.LEFT });
+    } else if (e.key === "ArrowUp") {
+      connection.setRotation({ rotation: Rotation.FORWARD });
+    } else if (e.key === " ") {
+      connection.fireCannon({});
     }
-  });
-  app.view.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
   });
 
   app.ticker.add(() => {
@@ -79,14 +84,5 @@ async function getClient(token: string, onStateChange: (state: PlayerState) => v
     const connection = await client.connectNew(token, {}, onStateChange);
     window.history.pushState({}, "", `/${connection.stateId}`);
     return connection;
-  }
-}
-
-function getTextureForType(type: EntityType) {
-  switch (type) {
-    case EntityType.SHIP:
-      return shipTexture;
-    case EntityType.CANNON_BALL:
-      return cannonBallTexure;
   }
 }

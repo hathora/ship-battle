@@ -2,66 +2,74 @@ import { Methods, Context, Result } from "./.rtag/methods";
 import {
   UserData,
   PlayerState,
-  EntityType,
   ICreateGameRequest,
-  IMoveShipRequest,
   IFireCannonRequest,
-  Entity,
+  ISetRotationRequest,
+  Ship,
+  CannonBall,
+  Rotation,
 } from "./.rtag/types";
 
 interface InternalState {
-  entities: Entity[];
+  ships: Ship[];
+  cannonBalls: CannonBall[];
   updatedAt: number;
 }
 
-const ENTITY_SPEEDS: Map<EntityType, number> = new Map([
-  [EntityType.SHIP, 200],
-  [EntityType.CANNON_BALL, 400],
-]);
+const SHIP_LINEAR_SPEED = 100;
+const SHIP_ANGULAR_SPEED = 0.5;
+const CANNON_BALL_LINEAR_SPEED = 400;
 
 export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
     return {
-      entities: [{ id: user.name, type: EntityType.SHIP, location: { x: 0, y: 0 }, angle: 0 }],
+      ships: [{ player: user.name, location: { x: 0, y: 0 }, angle: 0, rotation: Rotation.FORWARD }],
+      cannonBalls: [],
       updatedAt: 0,
     };
   }
-  moveShip(state: InternalState, user: UserData, ctx: Context, request: IMoveShipRequest): Result {
-    const entity = state.entities.find((p) => p.id == user.name);
-    if (entity === undefined) {
-      state.entities.push({
-        id: user.name,
-        type: EntityType.SHIP,
-        location: request.target,
-        angle: 0,
-      });
-    } else {
-      entity.angle =
-        Math.atan2(request.target.y - entity.location.y, request.target.x - entity.location.x);
-    }
+  setRotation(state: InternalState, user: UserData, ctx: Context, request: ISetRotationRequest): Result {
+    const ship = state.ships.find((ship) => ship.player === user.name)!;
+    ship.rotation = request.rotation;
     return Result.modified();
   }
   fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Result {
-    const location = { ...state.entities.find((entity) => entity.id === user.name)!.location };
-    state.entities.push({
+    const ship = state.ships.find((ship) => ship.player === user.name)!;
+    state.cannonBalls.push({
       id: ctx.rand().toString(36).substring(2),
-      type: EntityType.CANNON_BALL,
-      location,
-      angle: Math.atan2(request.target.y - location.y, request.target.x - location.x),
+      location: { ...ship.location },
+      angle: ship.angle + Math.PI / 2,
+    });
+    state.cannonBalls.push({
+      id: ctx.rand().toString(36).substring(2),
+      location: { ...ship.location },
+      angle: ship.angle - Math.PI / 2,
     });
     return Result.modified();
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
-    return { entities: state.entities, updatedAt: state.updatedAt };
+    return { ships: state.ships, cannonBalls: state.cannonBalls, updatedAt: state.updatedAt };
   }
   onTick(state: InternalState, ctx: Context, timeDelta: number): Result {
     let modified = false;
-    state.entities.forEach((entity, idx) => {
-      const pixelsToMove = ENTITY_SPEEDS.get(entity.type)! * timeDelta;
-      const dx = Math.cos(entity.angle) * pixelsToMove;
-      const dy = Math.sin(entity.angle) * pixelsToMove;
-      entity.location.x += dx;
-      entity.location.y += dy;
+    state.ships.forEach((ship) => {
+      if (ship.rotation === Rotation.LEFT) {
+        ship.angle -= SHIP_ANGULAR_SPEED * timeDelta;
+      } else if (ship.rotation === Rotation.RIGHT) {
+        ship.angle += SHIP_ANGULAR_SPEED * timeDelta;
+      }
+      const dx = Math.cos(ship.angle) * SHIP_LINEAR_SPEED * timeDelta;
+      const dy = Math.sin(ship.angle) * SHIP_LINEAR_SPEED * timeDelta;
+      ship.location.x += dx;
+      ship.location.y += dy;
+      state.updatedAt = ctx.time();
+      modified = true;
+    });
+    state.cannonBalls.forEach((cannonBall) => {
+      const dx = Math.cos(cannonBall.angle) * CANNON_BALL_LINEAR_SPEED * timeDelta;
+      const dy = Math.sin(cannonBall.angle) * CANNON_BALL_LINEAR_SPEED * timeDelta;
+      cannonBall.location.x += dx;
+      cannonBall.location.y += dy;
       state.updatedAt = ctx.time();
       modified = true;
     });

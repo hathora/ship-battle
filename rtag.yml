@@ -1,26 +1,31 @@
 types:
   PlayerName: string
-  EntityType:
-    - SHIP
-    - CANNON_BALL
+  Rotation:
+    - LEFT
+    - RIGHT
+    - FORWARD
   Point:
     x: number
     y: number
-  Entity:
+  Ship:
+    player: PlayerName
+    location: Point
+    angle: number
+    rotation: Rotation
+  CannonBall:
     id: string
-    type: EntityType
     location: Point
     angle: number
   PlayerState:
-    entities: Entity[]
+    ships: Ship[]
+    cannonBalls: CannonBall[]
     updatedAt: number
 
 methods:
   createGame:
-  moveShip:
-    target: Point
+  setRotation:
+    rotation: Rotation
   fireCannon:
-    target: Point
 
 auth:
   anonymous:

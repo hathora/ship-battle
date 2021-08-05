@@ -28,15 +28,15 @@ async function setupApp() {
 
   const connection = await getClient(token, (state) => {
     const updatedEntities = new Set();
-    state.entities.forEach(({ id, type, location }) => {
+    state.entities.forEach(({ id, type, location, angle }) => {
       updatedEntities.add(id);
       if (!entities.has(id)) {
         const sprite = new PIXI.Sprite(getTextureForType(type));
         sprite.anchor.set(0.5);
         app.stage.addChild(sprite);
-        entities.set(id, { entity: new Entity(location), sprite });
+        entities.set(id, { entity: new Entity(location, angle), sprite });
       } else {
-        entities.get(id)!.entity.updateTarget(location, state.updatedAt + BUFFER_TIME);
+        entities.get(id)!.entity.updateTarget(location, angle, state.updatedAt + BUFFER_TIME);
       }
     });
     for (const entityId of entities.keys()) {
@@ -61,12 +61,10 @@ async function setupApp() {
   app.ticker.add(() => {
     const now = Date.now();
     entities.forEach(({ entity, sprite }) => {
-      const { x, y } = entity.getCurrPos(now);
-      if (x !== sprite.x && y !== sprite.y) {
-        sprite.rotation = Math.atan2(y - sprite.y, x - sprite.x) - Math.PI / 2;
-        sprite.x = x;
-        sprite.y = y;
-      }
+      const { location, angle } = entity.getCurrPos(now);
+      sprite.rotation = angle - Math.PI / 2;
+      sprite.x = location.x;
+      sprite.y = location.y;
     });
   });
 

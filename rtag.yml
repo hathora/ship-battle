@@ -10,6 +10,7 @@ types:
     id: string
     type: EntityType
     location: Point
+    angle: number
   PlayerState:
     entities: Entity[]
     updatedAt: number

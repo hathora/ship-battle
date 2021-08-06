@@ -8,11 +8,18 @@ import {
   Ship,
   CannonBall,
   Rotation,
+  Point,
 } from "./.rtag/types";
+
+interface InternalCannonBall {
+  id: string;
+  location: Point;
+  angle: number;
+}
 
 interface InternalState {
   ships: Ship[];
-  cannonBalls: CannonBall[];
+  cannonBalls: InternalCannonBall[];
   updatedAt: number;
 }
 
@@ -29,8 +36,12 @@ export class Impl implements Methods<InternalState> {
     };
   }
   setRotation(state: InternalState, user: UserData, ctx: Context, request: ISetRotationRequest): Result {
-    const ship = state.ships.find((ship) => ship.player === user.name)!;
-    ship.rotation = request.rotation;
+    const ship = state.ships.find((ship) => ship.player === user.name);
+    if (ship === undefined) {
+      state.ships.push({ player: user.name, location: { x: 0, y: 0 }, angle: 0, rotation: Rotation.FORWARD });
+    } else {
+      ship.rotation = request.rotation;
+    }
     return Result.modified();
   }
   fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Result {
@@ -48,7 +59,11 @@ export class Impl implements Methods<InternalState> {
     return Result.modified();
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
-    return { ships: state.ships, cannonBalls: state.cannonBalls, updatedAt: state.updatedAt };
+    return {
+      ships: state.ships,
+      cannonBalls: state.cannonBalls.map(({ id, location }) => ({ id, location })),
+      updatedAt: state.updatedAt,
+    };
   }
   onTick(state: InternalState, ctx: Context, timeDelta: number): Result {
     let modified = false;

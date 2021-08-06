@@ -40,7 +40,7 @@ async function setupApp() {
       }
     }
     state.ships.forEach(({ player, location, angle }) => handleEntity(player, location, angle, shipTexture));
-    state.cannonBalls.forEach(({ id, location, angle }) => handleEntity(id, location, angle, cannonBallTexure));
+    state.cannonBalls.forEach(({ id, location }) => handleEntity(id, location, 0, cannonBallTexure));
     for (const entityId of entities.keys()) {
       if (!updatedEntites.has(entityId)) {
         entities.get(entityId)!.sprite.destroy();

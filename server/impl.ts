@@ -62,16 +62,8 @@ export class Impl implements Methods<InternalState> {
       return Result.unmodified("Reloading");
     }
     ship.lastFiredAt = ctx.time();
-    state.cannonBalls.push({
-      id: ctx.rand().toString(36).substring(2),
-      location: { ...ship.location },
-      angle: ship.angle + Math.PI / 2,
-    });
-    state.cannonBalls.push({
-      id: ctx.rand().toString(36).substring(2),
-      location: { ...ship.location },
-      angle: ship.angle - Math.PI / 2,
-    });
+    state.cannonBalls.push(createCannonBall(ctx.rand().toString(36).substring(2), ship, Math.PI / 2));
+    state.cannonBalls.push(createCannonBall(ctx.rand().toString(36).substring(2), ship, -Math.PI / 2));
     return Result.modified();
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
@@ -118,4 +110,8 @@ export class Impl implements Methods<InternalState> {
 
 function createShip(player: string) {
   return { player, location: { x: 0, y: 0 }, angle: 0, rotation: Rotation.FORWARD, lastFiredAt: 0 };
+}
+
+function createCannonBall(id: string, ship: InternalShip, dAngle: number) {
+  return { id, location: { ...ship.location }, angle: ship.angle + dAngle };
 }

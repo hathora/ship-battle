@@ -65,11 +65,19 @@ export class Impl implements Methods<InternalState> {
       state.updatedAt = ctx.time();
       modified = true;
     });
-    state.cannonBalls.forEach((cannonBall) => {
+    state.cannonBalls.forEach((cannonBall, idx) => {
       const dx = Math.cos(cannonBall.angle) * CANNON_BALL_LINEAR_SPEED * timeDelta;
       const dy = Math.sin(cannonBall.angle) * CANNON_BALL_LINEAR_SPEED * timeDelta;
       cannonBall.location.x += dx;
       cannonBall.location.y += dy;
+      if (
+        cannonBall.location.x < 0 ||
+        cannonBall.location.y < 0 ||
+        cannonBall.location.x >= 1200 ||
+        cannonBall.location.y >= 900
+      ) {
+        state.cannonBalls.splice(idx, 1);
+      }
       state.updatedAt = ctx.time();
       modified = true;
     });

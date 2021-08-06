@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 import { RtagClient } from "./.rtag/client";
-import { PlayerState, Rotation } from "./.rtag/types";
+import { PlayerState, Point, Rotation } from "./.rtag/types";
 import { Entity } from "./Entity";
 
 const BUFFER_TIME = 140;
@@ -22,33 +22,31 @@ async function setupApp() {
   }
   const token = sessionStorage.getItem("token")!;
 
-  const app = new PIXI.Application();
-  const background = new PIXI.TilingSprite(waterTexture, 800, 600);
+  const app = new PIXI.Application({ width: 1200, height: 900 });
+  const background = new PIXI.TilingSprite(waterTexture, app.view.width, app.view.width);
   app.stage.addChild(background);
 
   const connection = await getClient(token, (state) => {
-    state.ships.forEach((ship) => {
-      if (!entities.has(ship.player)) {
-        const sprite = new PIXI.Sprite(shipTexture);
+    const updatedEntites: Set<string> = new Set();
+    function handleEntity(id: string, location: Point, angle: number, texture: PIXI.Texture) {
+      updatedEntites.add(id);
+      if (!entities.has(id)) {
+        const sprite = new PIXI.Sprite(texture);
         sprite.anchor.set(0.5);
         app.stage.addChild(sprite);
-        entities.set(ship.player, { entity: new Entity(ship.location, ship.angle), sprite });
+        entities.set(id, { entity: new Entity(location, angle), sprite });
       } else {
-        entities.get(ship.player)!.entity.updateTarget(ship.location, ship.angle, state.updatedAt + BUFFER_TIME);
+        entities.get(id)!.entity.updateTarget(location, angle, state.updatedAt + BUFFER_TIME);
       }
-    });
-    state.cannonBalls.forEach((cannonBall) => {
-      if (!entities.has(cannonBall.id)) {
-        const sprite = new PIXI.Sprite(cannonBallTexure);
-        sprite.anchor.set(0.5);
-        app.stage.addChild(sprite);
-        entities.set(cannonBall.id, { entity: new Entity(cannonBall.location, cannonBall.angle), sprite });
-      } else {
-        entities
-          .get(cannonBall.id)!
-          .entity.updateTarget(cannonBall.location, cannonBall.angle, state.updatedAt + BUFFER_TIME);
+    }
+    state.ships.forEach(({ player, location, angle }) => handleEntity(player, location, angle, shipTexture));
+    state.cannonBalls.forEach(({ id, location, angle }) => handleEntity(id, location, angle, cannonBallTexure));
+    for (const entityId of entities.keys()) {
+      if (!updatedEntites.has(entityId)) {
+        entities.get(entityId)!.sprite.destroy();
+        entities.delete(entityId);
       }
-    });
+    }
   });
 
   document.addEventListener("keydown", (e) => {

@@ -6,10 +6,9 @@ import {
   IFireCannonRequest,
   ISetRotationRequest,
   Rotation,
-  Point,
   PlayerName,
 } from "./.rtag/types";
-import { Collisions, Polygon } from "detect-collisions";
+import { Collisions, Body, Polygon } from "detect-collisions";
 
 interface InternalShip {
   player: PlayerName;
@@ -21,7 +20,9 @@ interface InternalShip {
 
 interface InternalCannonBall {
   id: string;
-  body: Polygon;
+  firedBy: PlayerName;
+  body: Body;
+  angle: number;
 }
 
 interface InternalState {
@@ -36,8 +37,7 @@ const SHIP_LINEAR_SPEED = 100;
 const SHIP_ANGULAR_SPEED = 0.5;
 const SHIP_RELOAD_TIME = 5000;
 
-const CANNON_BALL_WIDTH = 10;
-const CANNON_BALL_HEIGHT = 10;
+const CANNON_BALL_RADIUS = 5;
 const CANNON_BALL_LINEAR_SPEED = 400;
 
 const system = new Collisions();
@@ -94,12 +94,12 @@ export class Impl implements Methods<InternalState> {
       } else if (ship.rotation === Rotation.RIGHT) {
         ship.body.angle += SHIP_ANGULAR_SPEED * timeDelta;
       }
-      move(ship.body, SHIP_LINEAR_SPEED, timeDelta);
+      move(ship.body, ship.body.angle, SHIP_LINEAR_SPEED, timeDelta);
       state.updatedAt = ctx.time();
       modified = true;
     });
     state.cannonBalls.forEach((cannonBall, idx) => {
-      move(cannonBall.body, CANNON_BALL_LINEAR_SPEED, timeDelta);
+      move(cannonBall.body, cannonBall.angle, CANNON_BALL_LINEAR_SPEED, timeDelta);
       if (cannonBall.body.x < 0 || cannonBall.body.y < 0 || cannonBall.body.x >= 1200 || cannonBall.body.y >= 900) {
         state.cannonBalls.splice(idx, 1);
       }
@@ -109,7 +109,7 @@ export class Impl implements Methods<InternalState> {
     system.update();
     state.ships.forEach((ship) => {
       state.cannonBalls.forEach((cannonBall, idx) => {
-        if (ship.body.collides(cannonBall.body)) {
+        if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {
           ship.hitCount++;
           state.cannonBalls.splice(idx, 1);
         }
@@ -121,32 +121,22 @@ export class Impl implements Methods<InternalState> {
 
 function createShip(player: string) {
   const body = system.createPolygon(0, 0, [
-    [0, 0],
-    [SHIP_WIDTH, 0],
-    [SHIP_WIDTH, SHIP_HEIGHT],
-    [0, SHIP_HEIGHT],
+    [-SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
+    [SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
+    [SHIP_WIDTH / 2, SHIP_HEIGHT / 2],
+    [-SHIP_WIDTH / 2, SHIP_HEIGHT / 2],
   ]);
   return { player, body, rotation: Rotation.FORWARD, hitCount: 0, lastFiredAt: 0 };
 }
 
 function createCannonBall(id: string, ship: InternalShip, dAngle: number) {
-  const body = system.createPolygon(
-    ship.body.x,
-    ship.body.y,
-    [
-      [0, 0],
-      [CANNON_BALL_WIDTH, 0],
-      [CANNON_BALL_WIDTH, CANNON_BALL_HEIGHT],
-      [0, CANNON_BALL_HEIGHT],
-    ],
-    ship.body.angle + dAngle
-  );
-  return { id, body };
+  const body = system.createCircle(ship.body.x, ship.body.y, CANNON_BALL_RADIUS);
+  return { id, firedBy: ship.player, body, angle: ship.body.angle + dAngle };
 }
 
-function move(entity: Polygon, speed: number, timeDelta: number) {
-  const dx = Math.cos(entity.angle) * speed * timeDelta;
-  const dy = Math.sin(entity.angle) * speed * timeDelta;
-  entity.x += dx;
-  entity.y += dy;
+function move(body: Body, angle: number, speed: number, timeDelta: number) {
+  const dx = Math.cos(angle) * speed * timeDelta;
+  const dy = Math.sin(angle) * speed * timeDelta;
+  body.x += dx;
+  body.y += dy;
 }

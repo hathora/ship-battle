@@ -12,6 +12,7 @@ types:
     location: Point
     angle: number
     rotation: Rotation
+    hitCount: number
   CannonBall:
     id: string
     location: Point

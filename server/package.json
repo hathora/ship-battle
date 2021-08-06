@@ -2,6 +2,9 @@
   "name": "arr-tag-server",
   "version": "0.0.1",
   "type": "module",
+  "dependencies": {
+    "detect-collisions": "^2.5.4"
+  },
   "devDependencies": {
     "typescript": "^4.3.4"
   }

@@ -9,19 +9,19 @@ import {
   Point,
   PlayerName,
 } from "./.rtag/types";
+import { Collisions, Polygon } from "detect-collisions";
 
 interface InternalShip {
   player: PlayerName;
-  location: Point;
-  angle: number;
+  body: Polygon;
   rotation: Rotation;
+  hitCount: number;
   lastFiredAt: number;
 }
 
 interface InternalCannonBall {
   id: string;
-  location: Point;
-  angle: number;
+  body: Polygon;
 }
 
 interface InternalState {
@@ -30,10 +30,17 @@ interface InternalState {
   updatedAt: number;
 }
 
+const SHIP_WIDTH = 113;
+const SHIP_HEIGHT = 66;
 const SHIP_LINEAR_SPEED = 100;
 const SHIP_ANGULAR_SPEED = 0.5;
 const SHIP_RELOAD_TIME = 5000;
+
+const CANNON_BALL_WIDTH = 10;
+const CANNON_BALL_HEIGHT = 10;
 const CANNON_BALL_LINEAR_SPEED = 400;
+
+const system = new Collisions();
 
 export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
@@ -68,8 +75,14 @@ export class Impl implements Methods<InternalState> {
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
     return {
-      ships: state.ships.map(({ player, location, angle, rotation }) => ({ player, location, angle, rotation })),
-      cannonBalls: state.cannonBalls.map(({ id, location }) => ({ id, location })),
+      ships: state.ships.map(({ player, body, rotation, hitCount }) => ({
+        player,
+        location: { x: body.x, y: body.y },
+        angle: body.angle,
+        rotation,
+        hitCount,
+      })),
+      cannonBalls: state.cannonBalls.map(({ id, body }) => ({ id, location: { x: body.x, y: body.y } })),
       updatedAt: state.updatedAt,
     };
   }
@@ -77,42 +90,63 @@ export class Impl implements Methods<InternalState> {
     let modified = false;
     state.ships.forEach((ship) => {
       if (ship.rotation === Rotation.LEFT) {
-        ship.angle -= SHIP_ANGULAR_SPEED * timeDelta;
+        ship.body.angle -= SHIP_ANGULAR_SPEED * timeDelta;
       } else if (ship.rotation === Rotation.RIGHT) {
-        ship.angle += SHIP_ANGULAR_SPEED * timeDelta;
+        ship.body.angle += SHIP_ANGULAR_SPEED * timeDelta;
       }
-      move(ship, SHIP_LINEAR_SPEED, timeDelta);
+      move(ship.body, SHIP_LINEAR_SPEED, timeDelta);
       state.updatedAt = ctx.time();
       modified = true;
     });
     state.cannonBalls.forEach((cannonBall, idx) => {
-      move(cannonBall, CANNON_BALL_LINEAR_SPEED, timeDelta);
-      if (
-        cannonBall.location.x < 0 ||
-        cannonBall.location.y < 0 ||
-        cannonBall.location.x >= 1200 ||
-        cannonBall.location.y >= 900
-      ) {
+      move(cannonBall.body, CANNON_BALL_LINEAR_SPEED, timeDelta);
+      if (cannonBall.body.x < 0 || cannonBall.body.y < 0 || cannonBall.body.x >= 1200 || cannonBall.body.y >= 900) {
         state.cannonBalls.splice(idx, 1);
       }
       state.updatedAt = ctx.time();
       modified = true;
+    });
+    system.update();
+    state.ships.forEach((ship) => {
+      state.cannonBalls.forEach((cannonBall, idx) => {
+        if (ship.body.collides(cannonBall.body)) {
+          ship.hitCount++;
+          state.cannonBalls.splice(idx, 1);
+        }
+      });
     });
     return modified ? Result.modified() : Result.unmodified();
   }
 }
 
 function createShip(player: string) {
-  return { player, location: { x: 0, y: 0 }, angle: 0, rotation: Rotation.FORWARD, lastFiredAt: 0 };
+  const body = system.createPolygon(0, 0, [
+    [0, 0],
+    [SHIP_WIDTH, 0],
+    [SHIP_WIDTH, SHIP_HEIGHT],
+    [0, SHIP_HEIGHT],
+  ]);
+  return { player, body, rotation: Rotation.FORWARD, hitCount: 0, lastFiredAt: 0 };
 }
 
 function createCannonBall(id: string, ship: InternalShip, dAngle: number) {
-  return { id, location: { ...ship.location }, angle: ship.angle + dAngle };
+  const body = system.createPolygon(
+    ship.body.x,
+    ship.body.y,
+    [
+      [0, 0],
+      [CANNON_BALL_WIDTH, 0],
+      [CANNON_BALL_WIDTH, CANNON_BALL_HEIGHT],
+      [0, CANNON_BALL_HEIGHT],
+    ],
+    ship.body.angle + dAngle
+  );
+  return { id, body };
 }
 
-function move(entity: { location: Point; angle: number }, speed: number, timeDelta: number) {
+function move(entity: Polygon, speed: number, timeDelta: number) {
   const dx = Math.cos(entity.angle) * speed * timeDelta;
   const dy = Math.sin(entity.angle) * speed * timeDelta;
-  entity.location.x += dx;
-  entity.location.y += dy;
+  entity.x += dx;
+  entity.y += dy;
 }

@@ -81,18 +81,12 @@ export class Impl implements Methods<InternalState> {
       } else if (ship.rotation === Rotation.RIGHT) {
         ship.angle += SHIP_ANGULAR_SPEED * timeDelta;
       }
-      const dx = Math.cos(ship.angle) * SHIP_LINEAR_SPEED * timeDelta;
-      const dy = Math.sin(ship.angle) * SHIP_LINEAR_SPEED * timeDelta;
-      ship.location.x += dx;
-      ship.location.y += dy;
+      move(ship, SHIP_LINEAR_SPEED, timeDelta);
       state.updatedAt = ctx.time();
       modified = true;
     });
     state.cannonBalls.forEach((cannonBall, idx) => {
-      const dx = Math.cos(cannonBall.angle) * CANNON_BALL_LINEAR_SPEED * timeDelta;
-      const dy = Math.sin(cannonBall.angle) * CANNON_BALL_LINEAR_SPEED * timeDelta;
-      cannonBall.location.x += dx;
-      cannonBall.location.y += dy;
+      move(cannonBall, CANNON_BALL_LINEAR_SPEED, timeDelta);
       if (
         cannonBall.location.x < 0 ||
         cannonBall.location.y < 0 ||
@@ -114,4 +108,11 @@ function createShip(player: string) {
 
 function createCannonBall(id: string, ship: InternalShip, dAngle: number) {
   return { id, location: { ...ship.location }, angle: ship.angle + dAngle };
+}
+
+function move(entity: { location: Point; angle: number }, speed: number, timeDelta: number) {
+  const dx = Math.cos(entity.angle) * speed * timeDelta;
+  const dy = Math.sin(entity.angle) * speed * timeDelta;
+  entity.location.x += dx;
+  entity.location.y += dy;
 }

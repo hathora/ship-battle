@@ -6,10 +6,18 @@ import {
   IFireCannonRequest,
   ISetRotationRequest,
   Ship,
-  CannonBall,
   Rotation,
   Point,
+  PlayerName,
 } from "./.rtag/types";
+
+interface InternalShip {
+  player: PlayerName;
+  location: Point;
+  angle: number;
+  rotation: Rotation;
+  lastFiredAt: number;
+}
 
 interface InternalCannonBall {
   id: string;
@@ -18,19 +26,20 @@ interface InternalCannonBall {
 }
 
 interface InternalState {
-  ships: Ship[];
+  ships: InternalShip[];
   cannonBalls: InternalCannonBall[];
   updatedAt: number;
 }
 
 const SHIP_LINEAR_SPEED = 100;
 const SHIP_ANGULAR_SPEED = 0.5;
+const SHIP_RELOAD_TIME = 5000;
 const CANNON_BALL_LINEAR_SPEED = 400;
 
 export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
     return {
-      ships: [{ player: user.name, location: { x: 0, y: 0 }, angle: 0, rotation: Rotation.FORWARD }],
+      ships: [createShip(user.name)],
       cannonBalls: [],
       updatedAt: 0,
     };
@@ -38,14 +47,23 @@ export class Impl implements Methods<InternalState> {
   setRotation(state: InternalState, user: UserData, ctx: Context, request: ISetRotationRequest): Result {
     const ship = state.ships.find((ship) => ship.player === user.name);
     if (ship === undefined) {
-      state.ships.push({ player: user.name, location: { x: 0, y: 0 }, angle: 0, rotation: Rotation.FORWARD });
+      state.ships.push(createShip(user.name));
     } else {
       ship.rotation = request.rotation;
     }
     return Result.modified();
   }
   fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Result {
-    const ship = state.ships.find((ship) => ship.player === user.name)!;
+    const ship = state.ships.find((ship) => ship.player === user.name);
+    if (ship === undefined) {
+      state.ships.push(createShip(user.name));
+      return Result.modified();
+    }
+    const now = Date.now();
+    if (now - ship.lastFiredAt < SHIP_RELOAD_TIME) {
+      return Result.unmodified("Reloading");
+    }
+    ship.lastFiredAt = now;
     state.cannonBalls.push({
       id: ctx.rand().toString(36).substring(2),
       location: { ...ship.location },
@@ -60,7 +78,7 @@ export class Impl implements Methods<InternalState> {
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
     return {
-      ships: state.ships,
+      ships: state.ships.map(({ player, location, angle, rotation }) => ({ player, location, angle, rotation })),
       cannonBalls: state.cannonBalls.map(({ id, location }) => ({ id, location })),
       updatedAt: state.updatedAt,
     };
@@ -98,4 +116,8 @@ export class Impl implements Methods<InternalState> {
     });
     return modified ? Result.modified() : Result.unmodified();
   }
+}
+
+function createShip(player: string) {
+  return { player, location: { x: 0, y: 0 }, angle: 0, rotation: Rotation.FORWARD, lastFiredAt: 0 };
 }

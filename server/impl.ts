@@ -38,17 +38,13 @@ const SHIP_ANGULAR_SPEED = 0.5;
 const SHIP_RELOAD_TIME = 5000;
 
 const CANNON_BALL_RADIUS = 5;
-const CANNON_BALL_LINEAR_SPEED = 400;
+const CANNON_BALL_SPEED = 400;
 
 const system = new Collisions();
 
 export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
-    return {
-      ships: [createShip(user.name)],
-      cannonBalls: [],
-      updatedAt: 0,
-    };
+    return { ships: [createShip(user.name)], cannonBalls: [], updatedAt: 0 };
   }
   setRotation(state: InternalState, user: UserData, ctx: Context, request: ISetRotationRequest): Result {
     const ship = state.ships.find((ship) => ship.player === user.name);
@@ -87,7 +83,6 @@ export class Impl implements Methods<InternalState> {
     };
   }
   onTick(state: InternalState, ctx: Context, timeDelta: number): Result {
-    let modified = false;
     state.ships.forEach((ship) => {
       if (ship.rotation === Rotation.LEFT) {
         ship.body.angle -= SHIP_ANGULAR_SPEED * timeDelta;
@@ -96,15 +91,13 @@ export class Impl implements Methods<InternalState> {
       }
       move(ship.body, ship.body.angle, SHIP_LINEAR_SPEED, timeDelta);
       state.updatedAt = ctx.time();
-      modified = true;
     });
     state.cannonBalls.forEach((cannonBall, idx) => {
-      move(cannonBall.body, cannonBall.angle, CANNON_BALL_LINEAR_SPEED, timeDelta);
+      move(cannonBall.body, cannonBall.angle, CANNON_BALL_SPEED, timeDelta);
       if (cannonBall.body.x < 0 || cannonBall.body.y < 0 || cannonBall.body.x >= 1200 || cannonBall.body.y >= 900) {
         state.cannonBalls.splice(idx, 1);
       }
       state.updatedAt = ctx.time();
-      modified = true;
     });
     system.update();
     state.ships.forEach((ship) => {
@@ -115,7 +108,7 @@ export class Impl implements Methods<InternalState> {
         }
       });
     });
-    return modified ? Result.modified() : Result.unmodified();
+    return Result.modified();
   }
 }
 

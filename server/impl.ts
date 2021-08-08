@@ -31,6 +31,9 @@ interface InternalState {
   updatedAt: number;
 }
 
+const MAP_WIDTH = 1200;
+const MAP_HEIGHT = 900;
+
 const SHIP_WIDTH = 113;
 const SHIP_HEIGHT = 66;
 const SHIP_LINEAR_SPEED = 100;
@@ -94,7 +97,8 @@ export class Impl implements Methods<InternalState> {
     });
     state.cannonBalls.forEach((cannonBall, idx) => {
       move(cannonBall.body, cannonBall.angle, CANNON_BALL_SPEED, timeDelta);
-      if (cannonBall.body.x < 0 || cannonBall.body.y < 0 || cannonBall.body.x >= 1200 || cannonBall.body.y >= 900) {
+      const { x, y } = cannonBall.body;
+      if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) {
         state.cannonBalls.splice(idx, 1);
       }
       state.updatedAt = ctx.time();
@@ -112,7 +116,7 @@ export class Impl implements Methods<InternalState> {
   }
 }
 
-function createShip(player: string) {
+function createShip(player: PlayerName) {
   const body = system.createPolygon(0, 0, [
     [-SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
     [SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
@@ -128,8 +132,6 @@ function createCannonBall(id: string, ship: InternalShip, dAngle: number) {
 }
 
 function move(body: Body, angle: number, speed: number, timeDelta: number) {
-  const dx = Math.cos(angle) * speed * timeDelta;
-  const dy = Math.sin(angle) * speed * timeDelta;
-  body.x += dx;
-  body.y += dy;
+  body.x += Math.cos(angle) * speed * timeDelta;
+  body.y += Math.sin(angle) * speed * timeDelta;
 }

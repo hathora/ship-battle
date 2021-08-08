@@ -1,37 +1,36 @@
-import * as PIXI from "pixi.js";
+import { Texture, Application, Sprite, TilingSprite } from "pixi.js";
 import { RtagClient } from "./.rtag/client";
 import { PlayerState, Point, Rotation } from "./.rtag/types";
 import { Entity } from "./Entity";
 
 const BUFFER_TIME = 140;
+const MAP_WIDTH = 1200;
+const MAP_HEIGHT = 900;
 
 const client = new RtagClient(import.meta.env.VITE_APP_ID);
-
-const entities: Map<string, { entity: Entity; sprite: PIXI.Sprite }> = new Map();
-const waterTexture = PIXI.Texture.from("water.png");
-const shipTexture = PIXI.Texture.from("ship.png");
-const cannonBallTexure = PIXI.Texture.from("cannonBall.png");
+const entities: Map<string, { entity: Entity; sprite: Sprite }> = new Map();
+const waterTexture = Texture.from("water.png");
+const shipTexture = Texture.from("ship.png");
+const cannonBallTexure = Texture.from("cannonBall.png");
 
 setupApp().then((view) => {
   document.body.appendChild(view);
 });
 
 async function setupApp() {
+  const app = new Application({ width: MAP_WIDTH, height: MAP_HEIGHT });
+  const background = new TilingSprite(waterTexture, app.view.width, app.view.width);
+  app.stage.addChild(background);
+
   if (sessionStorage.getItem("token") === null) {
     sessionStorage.setItem("token", await client.loginAnonymous());
   }
-  const token = sessionStorage.getItem("token")!;
-
-  const app = new PIXI.Application({ width: 1200, height: 900 });
-  const background = new PIXI.TilingSprite(waterTexture, app.view.width, app.view.width);
-  app.stage.addChild(background);
-
-  const connection = await getClient(token, (state) => {
+  const connection = await getClient(sessionStorage.getItem("token")!, (state) => {
     const updatedEntites: Set<string> = new Set();
-    function handleEntity(id: string, location: Point, angle: number, texture: PIXI.Texture) {
+    function handleEntity(id: string, location: Point, angle: number, texture: Texture) {
       updatedEntites.add(id);
       if (!entities.has(id)) {
-        const sprite = new PIXI.Sprite(texture);
+        const sprite = new Sprite(texture);
         sprite.anchor.set(0.5);
         app.stage.addChild(sprite);
         entities.set(id, { entity: new Entity(location, angle), sprite });
@@ -75,12 +74,12 @@ async function setupApp() {
 }
 
 async function getClient(token: string, onStateChange: (state: PlayerState) => void) {
-  if (window.location.pathname.length > 1) {
-    const stateId = window.location.pathname.split("/").pop()!;
+  if (location.pathname.length > 1) {
+    const stateId = location.pathname.split("/").pop()!;
     return client.connectExisting(token, stateId, onStateChange);
   } else {
     const connection = await client.connectNew(token, {}, onStateChange);
-    window.history.pushState({}, "", `/${connection.stateId}`);
+    history.pushState({}, "", `/${connection.stateId}`);
     return connection;
   }
 }

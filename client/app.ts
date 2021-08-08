@@ -1,4 +1,4 @@
-import { Texture, Application, Sprite, TilingSprite } from "pixi.js";
+import { Texture, Application, Sprite, AnimatedSprite, TilingSprite } from "pixi.js";
 import { RtagClient } from "./.rtag/client";
 import { PlayerState, Point, Rotation } from "./.rtag/types";
 import { Entity } from "./Entity";
@@ -10,7 +10,7 @@ const MAP_HEIGHT = 900;
 const client = new RtagClient(import.meta.env.VITE_APP_ID);
 const entities: Map<string, { entity: Entity; sprite: Sprite }> = new Map();
 const waterTexture = Texture.from("water.png");
-const shipTexture = Texture.from("ship.png");
+const shipTextures = [...Array(4)].map((_, i) => Texture.from(`ship${i}.png`));
 const cannonBallTexure = Texture.from("cannonBall.png");
 
 setupApp().then((view) => {
@@ -27,10 +27,10 @@ async function setupApp() {
   }
   const connection = await getClient(sessionStorage.getItem("token")!, (state) => {
     const updatedEntites: Set<string> = new Set();
-    function handleEntity(id: string, location: Point, angle: number, texture: Texture) {
+    function handleEntity(id: string, location: Point, angle: number, spriteGenerator: () => Sprite) {
       updatedEntites.add(id);
       if (!entities.has(id)) {
-        const sprite = new Sprite(texture);
+        const sprite = spriteGenerator();
         sprite.anchor.set(0.5);
         app.stage.addChild(sprite);
         entities.set(id, { entity: new Entity(location, angle), sprite });
@@ -38,8 +38,11 @@ async function setupApp() {
         entities.get(id)!.entity.updateTarget(location, angle, state.updatedAt + BUFFER_TIME);
       }
     }
-    state.ships.forEach(({ player, location, angle }) => handleEntity(player, location, angle, shipTexture));
-    state.cannonBalls.forEach(({ id, location }) => handleEntity(id, location, 0, cannonBallTexure));
+    state.ships.forEach(({ player, location, angle, hitCount }) => {
+      handleEntity(player, location, angle, () => new AnimatedSprite(shipTextures));
+      (entities.get(player)!.sprite as AnimatedSprite).gotoAndStop(hitCount);
+    });
+    state.cannonBalls.forEach(({ id, location }) => handleEntity(id, location, 0, () => new Sprite(cannonBallTexure)));
     for (const entityId of entities.keys()) {
       if (!updatedEntites.has(entityId)) {
         entities.get(entityId)!.sprite.destroy();

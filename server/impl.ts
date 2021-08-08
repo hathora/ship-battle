@@ -39,6 +39,7 @@ const SHIP_HEIGHT = 66;
 const SHIP_LINEAR_SPEED = 100;
 const SHIP_ANGULAR_SPEED = 0.5;
 const SHIP_RELOAD_TIME = 5000;
+const MAX_SHIP_HITS = 3;
 
 const CANNON_BALL_RADIUS = 5;
 const CANNON_BALL_SPEED = 400;
@@ -64,6 +65,9 @@ export class Impl implements Methods<InternalState> {
       state.ships.push(createShip(user.name));
       return Result.modified();
     }
+    if (ship.hitCount === MAX_SHIP_HITS) {
+      return Result.unmodified("Ship is distroyed");
+    }
     if (ctx.time() - ship.lastFiredAt < SHIP_RELOAD_TIME) {
       return Result.unmodified("Reloading");
     }
@@ -87,6 +91,9 @@ export class Impl implements Methods<InternalState> {
   }
   onTick(state: InternalState, ctx: Context, timeDelta: number): Result {
     state.ships.forEach((ship) => {
+      if (ship.hitCount === MAX_SHIP_HITS) {
+        return;
+      }
       if (ship.rotation === Rotation.LEFT) {
         ship.body.angle -= SHIP_ANGULAR_SPEED * timeDelta;
       } else if (ship.rotation === Rotation.RIGHT) {
@@ -107,7 +114,9 @@ export class Impl implements Methods<InternalState> {
     state.ships.forEach((ship) => {
       state.cannonBalls.forEach((cannonBall, idx) => {
         if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {
-          ship.hitCount++;
+          if (ship.hitCount < MAX_SHIP_HITS) {
+            ship.hitCount++;
+          }
           state.cannonBalls.splice(idx, 1);
         }
       });

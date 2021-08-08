@@ -7,8 +7,9 @@ const BUFFER_TIME = 140;
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;
 
+type EntityId = string | number;
 const client = new RtagClient(import.meta.env.VITE_APP_ID);
-const entities: Map<string, { entity: Entity; sprite: Sprite }> = new Map();
+const entities: Map<EntityId, { entity: Entity; sprite: Sprite }> = new Map();
 const waterTexture = Texture.from("water.png");
 const shipTextures = [...Array(4)].map((_, i) => Texture.from(`ship${i}.png`));
 const cannonBallTexure = Texture.from("cannonBall.png");
@@ -26,8 +27,8 @@ async function setupApp() {
     sessionStorage.setItem("token", await client.loginAnonymous());
   }
   const connection = await getClient(sessionStorage.getItem("token")!, (state) => {
-    const updatedEntites: Set<string> = new Set();
-    function handleEntity(id: string, location: Point, angle: number, spriteGenerator: () => Sprite) {
+    const updatedEntites: Set<EntityId> = new Set();
+    function handleEntity(id: EntityId, location: Point, angle: number, spriteGenerator: () => Sprite) {
       updatedEntites.add(id);
       if (!entities.has(id)) {
         const sprite = spriteGenerator();

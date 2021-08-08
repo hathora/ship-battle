@@ -8,7 +8,7 @@ import {
   Rotation,
   PlayerName,
 } from "./.rtag/types";
-import { Collisions, Body, Polygon } from "detect-collisions";
+import { Collisions, Circle, Polygon } from "detect-collisions";
 
 interface InternalShip {
   player: PlayerName;
@@ -19,9 +19,9 @@ interface InternalShip {
 }
 
 interface InternalCannonBall {
-  id: string;
+  id: number;
   firedBy: PlayerName;
-  body: Body;
+  body: Circle;
   angle: number;
 }
 
@@ -72,8 +72,8 @@ export class Impl implements Methods<InternalState> {
       return Result.unmodified("Reloading");
     }
     ship.lastFiredAt = ctx.time();
-    state.cannonBalls.push(createCannonBall(ctx.rand().toString(36).substring(2), ship, Math.PI / 2));
-    state.cannonBalls.push(createCannonBall(ctx.rand().toString(36).substring(2), ship, -Math.PI / 2));
+    state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, Math.PI / 2));
+    state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, -Math.PI / 2));
     return Result.modified();
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
@@ -135,12 +135,12 @@ function createShip(player: PlayerName) {
   return { player, body, rotation: Rotation.FORWARD, hitCount: 0, lastFiredAt: 0 };
 }
 
-function createCannonBall(id: string, ship: InternalShip, dAngle: number) {
+function createCannonBall(id: number, ship: InternalShip, dAngle: number) {
   const body = system.createCircle(ship.body.x, ship.body.y, CANNON_BALL_RADIUS);
   return { id, firedBy: ship.player, body, angle: ship.body.angle + dAngle };
 }
 
-function move(body: Body, angle: number, speed: number, timeDelta: number) {
-  body.x += Math.cos(angle) * speed * timeDelta;
-  body.y += Math.sin(angle) * speed * timeDelta;
+function move(location: { x: number; y: number }, angle: number, speed: number, timeDelta: number) {
+  location.x += Math.cos(angle) * speed * timeDelta;
+  location.y += Math.sin(angle) * speed * timeDelta;
 }

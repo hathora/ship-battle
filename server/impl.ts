@@ -118,6 +118,7 @@ export class Impl implements Methods<InternalState> {
             ship.hitCount++;
           }
           state.cannonBalls.splice(idx, 1);
+          system.remove(cannonBall.body);
         }
       });
     });

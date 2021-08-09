@@ -23,6 +23,7 @@ methods:
   createGame:
   setOrientation:
     orientation: Orientation
+    accelerating: boolean
   fireCannon:
 
 auth:

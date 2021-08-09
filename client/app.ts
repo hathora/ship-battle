@@ -52,17 +52,29 @@ async function setupApp() {
     }
   });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowRight") {
-      connection.setOrientation({ orientation: Orientation.RIGHT });
-    } else if (e.key === "ArrowLeft") {
-      connection.setOrientation({ orientation: Orientation.LEFT });
-    } else if (e.key === "ArrowUp") {
-      connection.setOrientation({ orientation: Orientation.FORWARD });
-    } else if (e.key === " ") {
+  const keysDown: Set<string> = new Set();
+  function handleKeyEvt(e: KeyboardEvent) {
+    if (e.key === " " && e.type === "keydown") {
       connection.fireCannon({});
+      return;
     }
-  });
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp"].includes(e.key)) {
+      return;
+    }
+    if (e.type === "keydown") {
+      keysDown.add(e.key);
+    } else if (e.type === "keyup") {
+      keysDown.delete(e.key);
+    }
+    const orientation = keysDown.has("ArrowLeft")
+      ? Orientation.LEFT
+      : keysDown.has("ArrowRight")
+      ? Orientation.RIGHT
+      : Orientation.FORWARD;
+    connection.setOrientation({ orientation, accelerating: keysDown.has("ArrowUp") });
+  }
+  document.addEventListener("keydown", handleKeyEvt);
+  document.addEventListener("keyup", handleKeyEvt);
 
   app.ticker.add(() => {
     const now = Date.now();

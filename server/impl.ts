@@ -14,6 +14,8 @@ interface InternalShip {
   player: PlayerName;
   body: Polygon;
   orientation: Orientation;
+  accelerating: boolean;
+  velocity: number;
   hitCount: number;
   lastFiredAt: number;
 }
@@ -36,7 +38,8 @@ const MAP_HEIGHT = 900;
 
 const SHIP_WIDTH = 113;
 const SHIP_HEIGHT = 66;
-const SHIP_LINEAR_SPEED = 100;
+const SHIP_ACCELERATION = 5;
+const SHIP_MAX_VELOCITY = 100;
 const SHIP_ANGULAR_SPEED = 0.5;
 const SHIP_RELOAD_TIME = 5000;
 const MAX_SHIP_HITS = 3;
@@ -56,7 +59,11 @@ export class Impl implements Methods<InternalState> {
       state.ships.push(createShip(user.name));
       return Result.modified();
     }
+    if (ship.hitCount >= MAX_SHIP_HITS) {
+      return Result.unmodified("Ship is distroyed");
+    }
     ship.orientation = request.orientation;
+    ship.accelerating = request.accelerating;
     return Result.modified();
   }
   fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Result {
@@ -65,7 +72,7 @@ export class Impl implements Methods<InternalState> {
       state.ships.push(createShip(user.name));
       return Result.modified();
     }
-    if (ship.hitCount === MAX_SHIP_HITS) {
+    if (ship.hitCount >= MAX_SHIP_HITS) {
       return Result.unmodified("Ship is distroyed");
     }
     if (ctx.time() - ship.lastFiredAt < SHIP_RELOAD_TIME) {
@@ -90,17 +97,25 @@ export class Impl implements Methods<InternalState> {
     };
   }
   onTick(state: InternalState, ctx: Context, timeDelta: number): Result {
+    let modified = false;
     state.ships.forEach((ship) => {
-      if (ship.hitCount === MAX_SHIP_HITS) {
-        return;
-      }
       if (ship.orientation === Orientation.LEFT) {
         ship.body.angle -= SHIP_ANGULAR_SPEED * timeDelta;
+        modified = true;
       } else if (ship.orientation === Orientation.RIGHT) {
         ship.body.angle += SHIP_ANGULAR_SPEED * timeDelta;
+        modified = true;
       }
-      move(ship.body, ship.body.angle, SHIP_LINEAR_SPEED, timeDelta);
-      state.updatedAt = ctx.time();
+      if (ship.accelerating) {
+        ship.velocity = Math.min(ship.velocity + SHIP_ACCELERATION, SHIP_MAX_VELOCITY);
+      } else {
+        ship.velocity = Math.max(ship.velocity - SHIP_ACCELERATION, 0);
+      }
+      if (ship.velocity > 0) {
+        move(ship.body, ship.body.angle, ship.velocity, timeDelta);
+        state.updatedAt = ctx.time();
+        modified = true;
+      }
     });
     state.cannonBalls.forEach((cannonBall, idx) => {
       move(cannonBall.body, cannonBall.angle, CANNON_BALL_SPEED, timeDelta);
@@ -109,20 +124,26 @@ export class Impl implements Methods<InternalState> {
         state.cannonBalls.splice(idx, 1);
       }
       state.updatedAt = ctx.time();
+      modified = true;
     });
-    system.update();
-    state.ships.forEach((ship) => {
-      state.cannonBalls.forEach((cannonBall, idx) => {
-        if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {
-          if (ship.hitCount < MAX_SHIP_HITS) {
+    if (modified) {
+      system.update();
+      state.ships.forEach((ship) => {
+        state.cannonBalls.forEach((cannonBall, idx) => {
+          if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {
             ship.hitCount++;
+            if (ship.hitCount >= MAX_SHIP_HITS) {
+              ship.orientation = Orientation.FORWARD;
+              ship.accelerating = false;
+            }
+            state.cannonBalls.splice(idx, 1);
+            system.remove(cannonBall.body);
           }
-          state.cannonBalls.splice(idx, 1);
-          system.remove(cannonBall.body);
-        }
+        });
       });
-    });
-    return Result.modified();
+      return Result.modified();
+    }
+    return Result.unmodified();
   }
 }
 
@@ -133,7 +154,15 @@ function createShip(player: PlayerName) {
     [SHIP_WIDTH / 2, SHIP_HEIGHT / 2],
     [-SHIP_WIDTH / 2, SHIP_HEIGHT / 2],
   ]);
-  return { player, body, orientation: Orientation.FORWARD, hitCount: 0, lastFiredAt: 0 };
+  return {
+    player,
+    body,
+    orientation: Orientation.FORWARD,
+    accelerating: false,
+    velocity: 0,
+    hitCount: 0,
+    lastFiredAt: 0,
+  };
 }
 
 function createCannonBall(id: number, ship: InternalShip, dAngle: number) {

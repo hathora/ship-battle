@@ -1,4 +1,4 @@
-import { Point } from "./.rtag/types";
+export type Point = { x: number; y: number };
 
 export class Entity {
   restingLocation: Point;

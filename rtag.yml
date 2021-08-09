@@ -1,21 +1,19 @@
 types:
   PlayerName: string
-  Rotation:
+  Orientation:
     - LEFT
     - RIGHT
     - FORWARD
-  Point:
-    x: number
-    y: number
   Ship:
     player: PlayerName
-    location: Point
+    x: number
+    y: number
     angle: number
-    rotation: Rotation
     hitCount: number
   CannonBall:
     id: number
-    location: Point
+    x: number
+    y: number
   PlayerState:
     ships: Ship[]
     cannonBalls: CannonBall[]
@@ -23,8 +21,8 @@ types:
 
 methods:
   createGame:
-  setRotation:
-    rotation: Rotation
+  setOrientation:
+    orientation: Orientation
   fireCannon:
 
 auth:

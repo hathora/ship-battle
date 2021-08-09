@@ -4,8 +4,8 @@ import {
   PlayerState,
   ICreateGameRequest,
   IFireCannonRequest,
-  ISetRotationRequest,
-  Rotation,
+  ISetOrientationRequest,
+  Orientation,
   PlayerName,
 } from "./.rtag/types";
 import { Collisions, Circle, Polygon } from "detect-collisions";
@@ -13,7 +13,7 @@ import { Collisions, Circle, Polygon } from "detect-collisions";
 interface InternalShip {
   player: PlayerName;
   body: Polygon;
-  rotation: Rotation;
+  orientation: Orientation;
   hitCount: number;
   lastFiredAt: number;
 }
@@ -50,17 +50,17 @@ export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
     return { ships: [createShip(user.name)], cannonBalls: [], updatedAt: 0 };
   }
-  setRotation(state: InternalState, user: UserData, ctx: Context, request: ISetRotationRequest): Result {
-    const ship = state.ships.find((ship) => ship.player === user.name);
+  setOrientation(state: InternalState, user: UserData, ctx: Context, request: ISetOrientationRequest): Result {
+    const ship = state.ships.find((s) => s.player === user.name);
     if (ship === undefined) {
       state.ships.push(createShip(user.name));
       return Result.modified();
     }
-    ship.rotation = request.rotation;
+    ship.orientation = request.orientation;
     return Result.modified();
   }
   fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Result {
-    const ship = state.ships.find((ship) => ship.player === user.name);
+    const ship = state.ships.find((s) => s.player === user.name);
     if (ship === undefined) {
       state.ships.push(createShip(user.name));
       return Result.modified();
@@ -78,14 +78,14 @@ export class Impl implements Methods<InternalState> {
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
     return {
-      ships: state.ships.map(({ player, body, rotation, hitCount }) => ({
+      ships: state.ships.map(({ player, body, hitCount }) => ({
         player,
-        location: { x: body.x, y: body.y },
+        x: body.x,
+        y: body.y,
         angle: body.angle,
-        rotation,
         hitCount,
       })),
-      cannonBalls: state.cannonBalls.map(({ id, body }) => ({ id, location: { x: body.x, y: body.y } })),
+      cannonBalls: state.cannonBalls.map(({ id, body }) => ({ id, x: body.x, y: body.y })),
       updatedAt: state.updatedAt,
     };
   }
@@ -94,9 +94,9 @@ export class Impl implements Methods<InternalState> {
       if (ship.hitCount === MAX_SHIP_HITS) {
         return;
       }
-      if (ship.rotation === Rotation.LEFT) {
+      if (ship.orientation === Orientation.LEFT) {
         ship.body.angle -= SHIP_ANGULAR_SPEED * timeDelta;
-      } else if (ship.rotation === Rotation.RIGHT) {
+      } else if (ship.orientation === Orientation.RIGHT) {
         ship.body.angle += SHIP_ANGULAR_SPEED * timeDelta;
       }
       move(ship.body, ship.body.angle, SHIP_LINEAR_SPEED, timeDelta);
@@ -133,7 +133,7 @@ function createShip(player: PlayerName) {
     [SHIP_WIDTH / 2, SHIP_HEIGHT / 2],
     [-SHIP_WIDTH / 2, SHIP_HEIGHT / 2],
   ]);
-  return { player, body, rotation: Rotation.FORWARD, hitCount: 0, lastFiredAt: 0 };
+  return { player, body, orientation: Orientation.FORWARD, hitCount: 0, lastFiredAt: 0 };
 }
 
 function createCannonBall(id: number, ship: InternalShip, dAngle: number) {

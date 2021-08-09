@@ -1,6 +1,6 @@
 import { Texture, Application, Sprite, AnimatedSprite, TilingSprite } from "pixi.js";
 import { RtagClient } from "./.rtag/client";
-import { PlayerState, Point, Rotation } from "./.rtag/types";
+import { PlayerState, Orientation } from "./.rtag/types";
 import { Entity } from "./Entity";
 
 const BUFFER_TIME = 140;
@@ -28,22 +28,22 @@ async function setupApp() {
   }
   const connection = await getClient(sessionStorage.getItem("token")!, (state) => {
     const updatedEntites: Set<EntityId> = new Set();
-    function handleEntity(id: EntityId, location: Point, angle: number, spriteGenerator: () => Sprite) {
+    function handleEntity(id: EntityId, x: number, y: number, angle: number, spriteGenerator: () => Sprite) {
       updatedEntites.add(id);
       if (!entities.has(id)) {
         const sprite = spriteGenerator();
         sprite.anchor.set(0.5);
         app.stage.addChild(sprite);
-        entities.set(id, { entity: new Entity(location, angle), sprite });
+        entities.set(id, { entity: new Entity({ x, y }, angle), sprite });
       } else {
-        entities.get(id)!.entity.updateTarget(location, angle, state.updatedAt + BUFFER_TIME);
+        entities.get(id)!.entity.updateTarget({ x, y }, angle, state.updatedAt + BUFFER_TIME);
       }
     }
-    state.ships.forEach(({ player, location, angle, hitCount }) => {
-      handleEntity(player, location, angle, () => new AnimatedSprite(shipTextures));
+    state.ships.forEach(({ player, x, y, angle, hitCount }) => {
+      handleEntity(player, x, y, angle, () => new AnimatedSprite(shipTextures));
       (entities.get(player)!.sprite as AnimatedSprite).gotoAndStop(hitCount);
     });
-    state.cannonBalls.forEach(({ id, location }) => handleEntity(id, location, 0, () => new Sprite(cannonBallTexure)));
+    state.cannonBalls.forEach(({ id, x, y }) => handleEntity(id, x, y, 0, () => new Sprite(cannonBallTexure)));
     for (const entityId of entities.keys()) {
       if (!updatedEntites.has(entityId)) {
         entities.get(entityId)!.sprite.destroy();
@@ -54,11 +54,11 @@ async function setupApp() {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "ArrowRight") {
-      connection.setRotation({ rotation: Rotation.RIGHT });
+      connection.setOrientation({ orientation: Orientation.RIGHT });
     } else if (e.key === "ArrowLeft") {
-      connection.setRotation({ rotation: Rotation.LEFT });
+      connection.setOrientation({ orientation: Orientation.LEFT });
     } else if (e.key === "ArrowUp") {
-      connection.setRotation({ rotation: Rotation.FORWARD });
+      connection.setOrientation({ orientation: Orientation.FORWARD });
     } else if (e.key === " ") {
       connection.fireCannon({});
     }

@@ -62,6 +62,9 @@ async function setupApp() {
       return;
     }
     if (e.type === "keydown") {
+      if (keysDown.has(e.key)) {
+        return;
+      }
       keysDown.add(e.key);
     } else if (e.type === "keyup") {
       keysDown.delete(e.key);

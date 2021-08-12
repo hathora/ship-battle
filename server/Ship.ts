@@ -10,16 +10,15 @@ const SHIP_RELOAD_TIME = 5000;
 const MAX_SHIP_HITS = 3;
 
 export class InternalShip {
-  public player: PlayerName;
-  public body: Polygon;
-  public orientation: Orientation = Orientation.FORWARD;
-  public accelerating: boolean = false;
-  public velocity: number = 0;
-  public hitCount: number = 0;
-  public lastFiredAt: number = 0;
+  public body;
+  public orientation = Orientation.FORWARD;
+  public accelerating = false;
+  public velocity = 0;
+  public hitCount = 0;
+  public lastFiredAt = 0;
+  public _modCnt = 0;
 
-  public constructor(player: PlayerName) {
-    this.player = player;
+  public constructor(public player: PlayerName) {
     this.body = new Polygon(0, 0, [
       [-SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
       [SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
@@ -34,6 +33,7 @@ export class InternalShip {
     }
     this.orientation = orientation;
     this.accelerating = accelerating;
+    this._modCnt++;
     return true;
   }
 
@@ -45,14 +45,18 @@ export class InternalShip {
       return false;
     }
     this.lastFiredAt = time;
+    this._modCnt++;
     return true;
   }
 
   public update(timeDelta: number): boolean {
+    const oldModCnt = this._modCnt;
     if (this.orientation === Orientation.LEFT) {
       this.body.angle -= SHIP_ANGULAR_SPEED * timeDelta;
+      this._modCnt++;
     } else if (this.orientation === Orientation.RIGHT) {
       this.body.angle += SHIP_ANGULAR_SPEED * timeDelta;
+      this._modCnt++;
     }
     if (this.accelerating) {
       this.velocity = Math.min(this.velocity + SHIP_ACCELERATION, SHIP_MAX_VELOCITY);
@@ -62,13 +66,15 @@ export class InternalShip {
     if (this.velocity > 0) {
       this.body.x += Math.cos(this.body.angle) * this.velocity * timeDelta;
       this.body.y += Math.sin(this.body.angle) * this.velocity * timeDelta;
+      this._modCnt++;
     }
-    return this.orientation !== Orientation.FORWARD || this.velocity > 0;
+    return this._modCnt > oldModCnt;
   }
 
   public handleCollision() {
     if (this.hitCount < MAX_SHIP_HITS) {
       this.hitCount++;
+      this._modCnt++;
       if (this.hitCount === MAX_SHIP_HITS) {
         this.orientation = Orientation.FORWARD;
         this.accelerating = false;

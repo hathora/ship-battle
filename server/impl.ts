@@ -1,6 +1,7 @@
-import { Methods, Context, Result } from "./.rtag/methods";
+import { Methods, Context } from "./.rtag/methods";
 import {
   UserData,
+  Response,
   PlayerState,
   ICreateGameRequest,
   IFireCannonRequest,
@@ -11,11 +12,11 @@ import { Collisions } from "detect-collisions";
 import { InternalShip } from "./Ship";
 import { InternalCannonBall } from "./CannonBall";
 
-interface InternalState {
+type InternalState = {
   ships: InternalShip[];
   cannonBalls: InternalCannonBall[];
   updatedAt: number;
-}
+};
 
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;
@@ -26,29 +27,29 @@ export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
     return { ships: [createShip(user.name)], cannonBalls: [], updatedAt: 0 };
   }
-  setOrientation(state: InternalState, user: UserData, ctx: Context, request: ISetOrientationRequest): Result {
+  setOrientation(state: InternalState, user: UserData, ctx: Context, request: ISetOrientationRequest): Response {
     const ship = state.ships.find((s) => s.player === user.name);
     if (ship === undefined) {
       state.ships.push(createShip(user.name));
-      return Result.modified();
+      return Response.ok();
     }
     if (!ship.setOrientation(request.orientation, request.accelerating)) {
-      return Result.unmodified("Invalid action");
+      return Response.error("Invalid action");
     }
-    return Result.modified();
+    return Response.ok();
   }
-  fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Result {
+  fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Response {
     const ship = state.ships.find((s) => s.player === user.name);
     if (ship === undefined) {
       state.ships.push(createShip(user.name));
-      return Result.modified();
+      return Response.ok();
     }
     if (!ship.fire(ctx.time())) {
-      return Result.unmodified("Invalid action");
+      return Response.error("Invalid action");
     }
     state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, Math.PI / 2));
     state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, -Math.PI / 2));
-    return Result.modified();
+    return Response.ok();
   }
   getUserState(state: InternalState, user: UserData): PlayerState {
     return {
@@ -57,11 +58,9 @@ export class Impl implements Methods<InternalState> {
       updatedAt: state.updatedAt,
     };
   }
-  onTick(state: InternalState, ctx: Context, timeDelta: number): Result {
-    let modified = false;
+  onTick(state: InternalState, ctx: Context, timeDelta: number): void {
     state.ships.forEach((ship) => {
       if (ship.update(timeDelta)) {
-        modified = true;
         state.updatedAt = ctx.time();
       }
     });
@@ -71,23 +70,18 @@ export class Impl implements Methods<InternalState> {
       if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) {
         state.cannonBalls.splice(idx, 1);
       }
-      modified = true;
       state.updatedAt = ctx.time();
     });
-    if (modified) {
-      system.update();
-      state.ships.forEach((ship) => {
-        state.cannonBalls.forEach((cannonBall, idx) => {
-          if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {
-            ship.handleCollision();
-            state.cannonBalls.splice(idx, 1);
-            system.remove(cannonBall.body);
-          }
-        });
+    system.update();
+    state.ships.forEach((ship) => {
+      state.cannonBalls.forEach((cannonBall, idx) => {
+        if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {
+          ship.handleCollision();
+          state.cannonBalls.splice(idx, 1);
+          system.remove(cannonBall.body);
+        }
       });
-      return Result.modified();
-    }
-    return Result.unmodified();
+    });
   }
 }
 

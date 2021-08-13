@@ -21,6 +21,7 @@ types:
 
 methods:
   createGame:
+  joinGame:
   setOrientation:
     orientation: Orientation
     accelerating: boolean

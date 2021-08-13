@@ -1,12 +1,12 @@
 import { Methods, Context } from "./.rtag/methods";
+import { UserData, Response } from "./.rtag/base";
 import {
-  UserData,
-  Response,
   PlayerState,
   ICreateGameRequest,
   IFireCannonRequest,
   ISetOrientationRequest,
   PlayerName,
+  IJoinGameRequest,
 } from "./.rtag/types";
 import { Collisions } from "detect-collisions";
 import { InternalShip } from "./Ship";
@@ -27,11 +27,17 @@ export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
     return { ships: [createShip(user.name)], cannonBalls: [], updatedAt: 0 };
   }
+  joinGame(state: InternalState, user: UserData, ctx: Context, request: IJoinGameRequest): Response {
+    if (state.ships.find((s) => s.player === user.name) !== undefined) {
+      return Response.error("Already joined");
+    }
+    state.ships.push(createShip(user.name));
+    return Response.ok();
+  }
   setOrientation(state: InternalState, user: UserData, ctx: Context, request: ISetOrientationRequest): Response {
     const ship = state.ships.find((s) => s.player === user.name);
     if (ship === undefined) {
-      state.ships.push(createShip(user.name));
-      return Response.ok();
+      return Response.error("Not joined game");
     }
     if (!ship.setOrientation(request.orientation, request.accelerating)) {
       return Response.error("Invalid action");
@@ -41,8 +47,7 @@ export class Impl implements Methods<InternalState> {
   fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Response {
     const ship = state.ships.find((s) => s.player === user.name);
     if (ship === undefined) {
-      state.ships.push(createShip(user.name));
-      return Response.ok();
+      return Response.error("Not joined game");
     }
     if (!ship.fire(ctx.time())) {
       return Response.error("Invalid action");
@@ -78,7 +83,7 @@ export class Impl implements Methods<InternalState> {
         if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {
           ship.handleCollision();
           state.cannonBalls.splice(idx, 1);
-          system.remove(cannonBall.body);
+          // system.remove(cannonBall.body);
         }
       });
     });

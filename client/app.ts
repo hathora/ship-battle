@@ -94,8 +94,9 @@ async function setupApp() {
 
 async function getClient(token: string, onStateChange: (state: PlayerState) => void) {
   if (location.pathname.length > 1) {
-    const stateId = location.pathname.split("/").pop()!;
-    return client.connectExisting(token, stateId, onStateChange);
+    const connection = await client.connectExisting(token, location.pathname.split("/").pop()!, onStateChange);
+    connection.joinGame({});
+    return connection;
   } else {
     const connection = await client.connectNew(token, {}, onStateChange);
     history.pushState({}, "", `/${connection.stateId}`);

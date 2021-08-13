@@ -2,10 +2,10 @@ import { Methods, Context } from "./.rtag/methods";
 import { UserData, Response } from "./.rtag/base";
 import {
   PlayerState,
+  PlayerName,
   ICreateGameRequest,
   IFireCannonRequest,
   ISetOrientationRequest,
-  PlayerName,
   IJoinGameRequest,
 } from "./.rtag/types";
 import { Collisions } from "detect-collisions";
@@ -73,6 +73,7 @@ export class Impl implements Methods<InternalState> {
       cannonBall.update(timeDelta);
       const { x, y } = cannonBall.body;
       if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) {
+        cannonBall.body.remove();
         state.cannonBalls.splice(idx, 1);
       }
       state.updatedAt = ctx.time();
@@ -83,7 +84,7 @@ export class Impl implements Methods<InternalState> {
         if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {
           ship.handleCollision();
           state.cannonBalls.splice(idx, 1);
-          // system.remove(cannonBall.body);
+          cannonBall.body.remove();
         }
       });
     });

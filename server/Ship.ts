@@ -4,7 +4,7 @@ import { Polygon } from "detect-collisions";
 const SHIP_WIDTH = 113;
 const SHIP_HEIGHT = 66;
 const SHIP_ACCELERATION = 5;
-const SHIP_MAX_VELOCITY = 100;
+const SHIP_MAX_VELOCITY = 200;
 const SHIP_ANGULAR_SPEED = 0.5;
 const SHIP_RELOAD_TIME = 5000;
 const MAX_SHIP_HITS = 3;
@@ -50,6 +50,9 @@ export class InternalShip {
   }
 
   public update(timeDelta: number): boolean {
+    if (this.hitCount === MAX_SHIP_HITS) {
+      return false;
+    }
     const oldModCnt = this._modCnt;
     if (this.orientation === Orientation.LEFT) {
       this.body.angle -= SHIP_ANGULAR_SPEED * timeDelta;
@@ -75,11 +78,12 @@ export class InternalShip {
     if (this.hitCount < MAX_SHIP_HITS) {
       this.hitCount++;
       this._modCnt++;
-      if (this.hitCount === MAX_SHIP_HITS) {
-        this.orientation = Orientation.FORWARD;
-        this.accelerating = false;
-      }
     }
+  }
+
+  public die() {
+    this.hitCount = MAX_SHIP_HITS;
+    this._modCnt++;
   }
 
   public toPlayerState(): Ship {

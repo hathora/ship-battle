@@ -18,8 +18,8 @@ export class InternalShip {
   public lastFiredAt = 0;
   public _modCnt = 0;
 
-  public constructor(public player: PlayerName) {
-    this.body = new Polygon(0, 0, [
+  public constructor(public player: PlayerName, x: number, y: number) {
+    this.body = new Polygon(x, y, [
       [-SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
       [SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
       [SHIP_WIDTH / 2, SHIP_HEIGHT / 2],

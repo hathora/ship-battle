@@ -6,6 +6,7 @@ import {
   IFireCannonRequest,
   ISetOrientationRequest,
   IJoinGameRequest,
+  PlayerName,
 } from "./.rtag/types";
 import { InternalShip } from "./Ship";
 import { InternalCannonBall } from "./CannonBall";
@@ -21,13 +22,13 @@ const MAP_HEIGHT = 900;
 
 export class Impl implements Methods<InternalState> {
   createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
-    return { ships: [new InternalShip(user.name)], cannonBalls: [], updatedAt: 0 };
+    return { ships: [createShip(user.name, ctx)], cannonBalls: [], updatedAt: 0 };
   }
   joinGame(state: InternalState, user: UserData, ctx: Context, request: IJoinGameRequest): Response {
     if (state.ships.find((s) => s.player === user.name) !== undefined) {
       return Response.error("Already joined");
     }
-    state.ships.push(new InternalShip(user.name));
+    state.ships.push(createShip(user.name, ctx));
     return Response.ok();
   }
   setOrientation(state: InternalState, user: UserData, ctx: Context, request: ISetOrientationRequest): Response {
@@ -86,6 +87,10 @@ export class Impl implements Methods<InternalState> {
       });
     });
   }
+}
+
+function createShip(player: PlayerName, ctx: Context) {
+  return new InternalShip(player, ctx.randInt(MAP_WIDTH), ctx.randInt(MAP_HEIGHT));
 }
 
 function createCannonBall(id: number, ship: InternalShip, dAngle: number) {

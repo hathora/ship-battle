@@ -1,6 +1,6 @@
 Built using https://github.com/hpx7/rtag
 
-Try it at https://silent-railway.surge.sh/
+Try it at https://ship-battle.surge.sh/
 
 ### Instructions
 

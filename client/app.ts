@@ -26,7 +26,13 @@ async function setupApp() {
   if (sessionStorage.getItem("token") === null) {
     sessionStorage.setItem("token", await client.loginAnonymous());
   }
-  const connection = await getClient(sessionStorage.getItem("token")!, (state) => {
+  const token = sessionStorage.getItem("token")!;
+  const user = RtagClient.getUserFromToken(token);
+  const connection = await getClient(token, (state) => {
+    if (state.ships.find((ship) => ship.player === user.name) === undefined) {
+      connection.joinGame({});
+    }
+
     const updatedEntites: Set<EntityId> = new Set();
     function handleEntity(id: EntityId, x: number, y: number, angle: number, spriteGenerator: () => Sprite) {
       updatedEntites.add(id);
@@ -94,9 +100,7 @@ async function setupApp() {
 
 async function getClient(token: string, onStateChange: (state: PlayerState) => void) {
   if (location.pathname.length > 1) {
-    const connection = await client.connectExisting(token, location.pathname.split("/").pop()!, onStateChange);
-    connection.joinGame({});
-    return connection;
+    return client.connectExisting(token, location.pathname.split("/").pop()!, onStateChange);
   } else {
     const connection = await client.connectNew(token, {}, onStateChange);
     history.pushState({}, "", `/${connection.stateId}`);

@@ -6,18 +6,18 @@ types:
     - FORWARD
   Ship:
     player: PlayerName
-    x: number
-    y: number
-    angle: number
-    hitCount: number
+    x: float
+    y: float
+    angle: float
+    hitCount: int
   CannonBall:
-    id: number
-    x: number
-    y: number
+    id: int
+    x: float
+    y: float
   PlayerState:
     ships: Ship[]
     cannonBalls: CannonBall[]
-    updatedAt: number
+    updatedAt: int
 
 methods:
   createGame:
@@ -34,4 +34,4 @@ auth:
 userState: PlayerState
 initialize: createGame
 error: string
-tick: true
+tick: 50

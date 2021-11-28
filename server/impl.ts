@@ -39,6 +39,7 @@ export class Impl implements Methods<InternalState> {
     if (!ship.setOrientation(request.orientation, request.accelerating)) {
       return Response.error("Invalid action");
     }
+    state.updatedAt = ctx.time();
     return Response.ok();
   }
   fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Response {
@@ -51,6 +52,7 @@ export class Impl implements Methods<InternalState> {
     }
     state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, Math.PI / 2));
     state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, -Math.PI / 2));
+    state.updatedAt = ctx.time();
     return Response.ok();
   }
   getUserState(state: InternalState, user: UserData): PlayerState {

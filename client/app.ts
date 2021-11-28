@@ -68,7 +68,6 @@ async function setupApp() {
   document.addEventListener("keyup", handleKeyEvt);
 
   app.ticker.add(() => {
-    console.time("frame");
     if (buffer === undefined) {
       return;
     }
@@ -99,7 +98,6 @@ async function setupApp() {
         entities.delete(entityId);
       }
     }
-    console.timeEnd("frame");
   });
 
   return app.view;

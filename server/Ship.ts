@@ -1,4 +1,4 @@
-import { Orientation, PlayerName, Ship } from "./.rtag/types";
+import { UserId, Orientation, Ship } from "./.rtag/types";
 import { Polygon } from "detect-collisions";
 
 const SHIP_WIDTH = 113;
@@ -18,7 +18,7 @@ export class InternalShip {
   public lastFiredAt = 0;
   public _modCnt = 0;
 
-  public constructor(public player: PlayerName, x: number, y: number) {
+  public constructor(public player: UserId, x: number, y: number) {
     this.body = new Polygon(x, y, [
       [-SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
       [SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],

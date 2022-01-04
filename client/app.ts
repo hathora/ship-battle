@@ -1,9 +1,8 @@
 import { Texture, Application, Sprite, AnimatedSprite, TilingSprite } from "pixi.js";
-import { RtagClient } from "./.rtag/client";
-import { PlayerState, Orientation } from "./.rtag/types";
+import { RtagClient, UpdateArgs } from "./.rtag/client";
+import { Orientation, PlayerState } from "./.rtag/types";
 import { StateBuffer } from "./stateBuffer";
 
-const BUFFER_TIME = 140;
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;
 
@@ -28,15 +27,15 @@ async function setupApp() {
   }
   const token = sessionStorage.getItem("token")!;
   const user = RtagClient.getUserFromToken(token);
-  let buffer: StateBuffer | undefined;
-  const connection = await getClient(token, (state) => {
+  let buffer: StateBuffer<PlayerState> | undefined;
+  const connection = await getClient(token, ({ state, updatedAt }) => {
     if (state.ships.find((ship) => ship.player === user.name) === undefined) {
       connection.joinGame({});
     }
     if (buffer === undefined) {
-      buffer = new StateBuffer(state);
+      buffer = new StateBuffer<PlayerState>(state, lerp);
     } else {
-      buffer.enqueue({ ...state, updatedAt: state.updatedAt + BUFFER_TIME });
+      buffer.enqueue(state, updatedAt);
     }
   });
 
@@ -103,12 +102,37 @@ async function setupApp() {
   return app.view;
 }
 
-async function getClient(token: string, onStateChange: (state: PlayerState) => void) {
+async function getClient(token: string, onStateChange: (args: UpdateArgs) => void) {
   if (location.pathname.length > 1) {
-    return client.connectExisting(token, location.pathname.split("/").pop()!, onStateChange);
+    return client.connectExisting(token, location.pathname.split("/").pop()!, onStateChange, console.error);
   } else {
-    const connection = await client.connectNew(token, {}, onStateChange);
+    const connection = await client.connectNew(token, {}, onStateChange, console.error);
     history.pushState({}, "", `/${connection.stateId}`);
     return connection;
   }
+}
+
+function lerp(from: PlayerState, to: PlayerState, pctElapsed: number): PlayerState {
+  return {
+    ships: to.ships.map((toShip) => {
+      const fromShip = from.ships.find((s) => s.player === toShip.player);
+      return fromShip !== undefined ? lerpEntity(fromShip, toShip, pctElapsed) : toShip;
+    }),
+    cannonBalls: to.cannonBalls.map((toCannonBall) => {
+      const fromCannonBall = from.cannonBalls.find((c) => c.id === toCannonBall.id);
+      return fromCannonBall !== undefined ? lerpEntity(fromCannonBall, toCannonBall, pctElapsed) : toCannonBall;
+    }),
+  };
+}
+
+function lerpEntity<T extends { x: number; y: number; angle?: number }>(from: T, to: T, pctElapsed: number): T {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const dAngle = (to.angle ?? 0) - (from.angle ?? 0);
+  return {
+    ...from,
+    x: from.x + dx * pctElapsed,
+    y: from.y + dy * pctElapsed,
+    angle: (from.angle ?? 0) + dAngle * pctElapsed,
+  };
 }

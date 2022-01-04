@@ -1,5 +1,5 @@
 import { Circle } from "detect-collisions";
-import { CannonBall, PlayerName } from "./.rtag/types";
+import { UserId, CannonBall } from "./.rtag/types";
 
 const CANNON_BALL_RADIUS = 5;
 const CANNON_BALL_SPEED = 400;
@@ -8,7 +8,7 @@ export class InternalCannonBall {
   public body;
   public _modCnt = 0;
 
-  public constructor(public id: number, public firedBy: PlayerName, x: number, y: number, public angle: number) {
+  public constructor(public id: number, public firedBy: UserId, x: number, y: number, public angle: number) {
     this.body = new Circle(x, y, CANNON_BALL_RADIUS);
   }
 

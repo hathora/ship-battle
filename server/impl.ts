@@ -1,12 +1,12 @@
 import { Methods, Context } from "./.rtag/methods";
-import { UserData, Response } from "./.rtag/base";
+import { Response } from "./.rtag/base";
 import {
+  UserId,
   PlayerState,
   ICreateGameRequest,
   IFireCannonRequest,
   ISetOrientationRequest,
   IJoinGameRequest,
-  PlayerName,
 } from "./.rtag/types";
 import { InternalShip } from "./Ship";
 import { InternalCannonBall } from "./CannonBall";
@@ -14,36 +14,34 @@ import { InternalCannonBall } from "./CannonBall";
 type InternalState = {
   ships: InternalShip[];
   cannonBalls: InternalCannonBall[];
-  updatedAt: number;
 };
 
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;
 
 export class Impl implements Methods<InternalState> {
-  createGame(user: UserData, ctx: Context, request: ICreateGameRequest): InternalState {
-    return { ships: [createShip(user.name, ctx)], cannonBalls: [], updatedAt: 0 };
+  createGame(userId: UserId, ctx: Context, request: ICreateGameRequest): InternalState {
+    return { ships: [createShip(userId, ctx)], cannonBalls: [] };
   }
-  joinGame(state: InternalState, user: UserData, ctx: Context, request: IJoinGameRequest): Response {
-    if (state.ships.find((s) => s.player === user.name) !== undefined) {
+  joinGame(state: InternalState, userId: UserId, ctx: Context, request: IJoinGameRequest): Response {
+    if (state.ships.find((s) => s.player === userId) !== undefined) {
       return Response.error("Already joined");
     }
-    state.ships.push(createShip(user.name, ctx));
+    state.ships.push(createShip(userId, ctx));
     return Response.ok();
   }
-  setOrientation(state: InternalState, user: UserData, ctx: Context, request: ISetOrientationRequest): Response {
-    const ship = state.ships.find((s) => s.player === user.name);
+  setOrientation(state: InternalState, userId: UserId, ctx: Context, request: ISetOrientationRequest): Response {
+    const ship = state.ships.find((s) => s.player === userId);
     if (ship === undefined) {
       return Response.error("Not joined game");
     }
     if (!ship.setOrientation(request.orientation, request.accelerating)) {
       return Response.error("Invalid action");
     }
-    state.updatedAt = ctx.time();
     return Response.ok();
   }
-  fireCannon(state: InternalState, user: UserData, ctx: Context, request: IFireCannonRequest): Response {
-    const ship = state.ships.find((s) => s.player === user.name);
+  fireCannon(state: InternalState, userId: UserId, ctx: Context, request: IFireCannonRequest): Response {
+    const ship = state.ships.find((s) => s.player === userId);
     if (ship === undefined) {
       return Response.error("Not joined game");
     }
@@ -52,14 +50,12 @@ export class Impl implements Methods<InternalState> {
     }
     state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, Math.PI / 2));
     state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, -Math.PI / 2));
-    state.updatedAt = ctx.time();
     return Response.ok();
   }
-  getUserState(state: InternalState, user: UserData): PlayerState {
+  getUserState(state: InternalState, userId: UserId): PlayerState {
     return {
       ships: state.ships.map((ship) => ship.toPlayerState()),
       cannonBalls: state.cannonBalls.map((cannonBall) => cannonBall.toPlayerState()),
-      updatedAt: state.updatedAt,
     };
   }
   onTick(state: InternalState, ctx: Context, timeDelta: number): void {
@@ -69,7 +65,6 @@ export class Impl implements Methods<InternalState> {
         if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) {
           ship.die();
         }
-        state.updatedAt = ctx.time();
       }
     });
     state.cannonBalls.forEach((cannonBall, idx) => {
@@ -78,8 +73,8 @@ export class Impl implements Methods<InternalState> {
       if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) {
         state.cannonBalls.splice(idx, 1);
       }
-      state.updatedAt = ctx.time();
     });
+
     state.ships.forEach((ship) => {
       state.cannonBalls.forEach((cannonBall, idx) => {
         if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {
@@ -91,7 +86,7 @@ export class Impl implements Methods<InternalState> {
   }
 }
 
-function createShip(player: PlayerName, ctx: Context) {
+function createShip(player: UserId, ctx: Context) {
   return new InternalShip(player, ctx.randInt(MAP_WIDTH), ctx.randInt(MAP_HEIGHT));
 }
 

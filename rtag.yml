@@ -1,11 +1,10 @@
 types:
-  PlayerName: string
   Orientation:
     - LEFT
     - RIGHT
     - FORWARD
   Ship:
-    player: PlayerName
+    player: UserId
     x: float
     y: float
     angle: float
@@ -17,7 +16,6 @@ types:
   PlayerState:
     ships: Ship[]
     cannonBalls: CannonBall[]
-    updatedAt: int
 
 methods:
   createGame:
@@ -34,4 +32,4 @@ auth:
 userState: PlayerState
 initialize: createGame
 error: string
-tick: 50
+tick: 100

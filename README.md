@@ -1,4 +1,4 @@
-Built using https://github.com/hpx7/rtag
+Built using https://github.com/hathora/hathora
 
 Try it at https://ship-battle.surge.sh/
 

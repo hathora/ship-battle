@@ -29,7 +29,7 @@ async function setupApp() {
   const user = RtagClient.getUserFromToken(token);
   let buffer: StateBuffer<PlayerState> | undefined;
   const connection = await getClient(token, ({ state, updatedAt }) => {
-    if (state.ships.find((ship) => ship.player === user.name) === undefined) {
+    if (state.ships.find((ship) => ship.player === user.id) === undefined) {
       connection.joinGame({});
     }
     if (buffer === undefined) {

@@ -1,4 +1,4 @@
-import { UserId, Orientation, Ship } from "./.rtag/types";
+import { UserId, Orientation, Ship } from "./.hathora/types";
 import { Polygon } from "detect-collisions";
 
 const SHIP_WIDTH = 113;

@@ -1,13 +1,13 @@
 import { Texture, Application, Sprite, AnimatedSprite, TilingSprite } from "pixi.js";
-import { RtagClient, UpdateArgs } from "./.rtag/client";
-import { Orientation, PlayerState } from "./.rtag/types";
+import { HathoraClient, UpdateArgs } from "./.hathora/client";
+import { Orientation, PlayerState } from "./.hathora/types";
 import { StateBuffer } from "./stateBuffer";
 
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;
 
 type EntityId = string | number;
-const client = new RtagClient(import.meta.env.VITE_APP_ID);
+const client = new HathoraClient(import.meta.env.VITE_APP_ID);
 const entities: Map<EntityId, Sprite> = new Map();
 const waterTexture = Texture.from("water.png");
 const shipTextures = [...Array(4)].map((_, i) => Texture.from(`ship${i}.png`));
@@ -26,7 +26,7 @@ async function setupApp() {
     sessionStorage.setItem("token", await client.loginAnonymous());
   }
   const token = sessionStorage.getItem("token")!;
-  const user = RtagClient.getUserFromToken(token);
+  const user = HathoraClient.getUserFromToken(token);
   let buffer: StateBuffer<PlayerState> | undefined;
   const connection = await getClient(token, ({ state, updatedAt }) => {
     if (state.ships.find((ship) => ship.player === user.id) === undefined) {

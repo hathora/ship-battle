@@ -1,5 +1,5 @@
-import { Methods, Context } from "./.rtag/methods";
-import { Response } from "./.rtag/base";
+import { Methods, Context } from "./.hathora/methods";
+import { Response } from "./.hathora/base";
 import {
   UserId,
   PlayerState,
@@ -7,7 +7,7 @@ import {
   IFireCannonRequest,
   ISetOrientationRequest,
   IJoinGameRequest,
-} from "./.rtag/types";
+} from "./.hathora/types";
 import { InternalShip } from "./Ship";
 import { InternalCannonBall } from "./CannonBall";
 

@@ -1,5 +1,5 @@
 import { Circle } from "detect-collisions";
-import { UserId, CannonBall } from "./.rtag/types";
+import { UserId, CannonBall } from "./.hathora/types";
 
 const CANNON_BALL_RADIUS = 5;
 const CANNON_BALL_SPEED = 400;

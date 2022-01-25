@@ -1,5 +1,5 @@
 import { Methods, Context } from "./.hathora/methods";
-import { Response } from "./.hathora/base";
+import { Response } from "../api/base";
 import {
   UserId,
   PlayerState,
@@ -7,7 +7,7 @@ import {
   IFireCannonRequest,
   ISetOrientationRequest,
   IJoinGameRequest,
-} from "./.hathora/types";
+} from "../api/types";
 import { InternalShip } from "./Ship";
 import { InternalCannonBall } from "./CannonBall";
 

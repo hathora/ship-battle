@@ -60,11 +60,9 @@ export class Impl implements Methods<InternalState> {
   }
   onTick(state: InternalState, ctx: Context, timeDelta: number): void {
     state.ships.forEach((ship) => {
-      if (ship.update(timeDelta)) {
-        const { x, y } = ship.body;
-        if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) {
-          ship.die();
-        }
+      ship.update(timeDelta);
+      if (ship.body.x < 0 || ship.body.y < 0 || ship.body.x >= MAP_WIDTH || ship.body.y >= MAP_HEIGHT) {
+        ship.die();
       }
     });
     state.cannonBalls.forEach((cannonBall, idx) => {

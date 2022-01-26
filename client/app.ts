@@ -1,7 +1,7 @@
 import { Texture, Application, Sprite, AnimatedSprite, TilingSprite } from "pixi.js";
 import { InterpolationBuffer } from "interpolation-buffer";
 import { HathoraClient, UpdateArgs } from "./.hathora/client";
-import { Orientation, PlayerState } from "./.hathora/types";
+import { Orientation, Ship, CannonBall, PlayerState } from "./.hathora/types";
 
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;
@@ -116,23 +116,29 @@ function lerp(from: PlayerState, to: PlayerState, pctElapsed: number): PlayerSta
   return {
     ships: to.ships.map((toShip) => {
       const fromShip = from.ships.find((s) => s.player === toShip.player);
-      return fromShip !== undefined ? lerpEntity(fromShip, toShip, pctElapsed) : toShip;
+      return fromShip !== undefined ? lerpShip(fromShip, toShip, pctElapsed) : toShip;
     }),
     cannonBalls: to.cannonBalls.map((toCannonBall) => {
       const fromCannonBall = from.cannonBalls.find((c) => c.id === toCannonBall.id);
-      return fromCannonBall !== undefined ? lerpEntity(fromCannonBall, toCannonBall, pctElapsed) : toCannonBall;
+      return fromCannonBall !== undefined ? lerpCannonBall(fromCannonBall, toCannonBall, pctElapsed) : toCannonBall;
     }),
   };
 }
 
-function lerpEntity<T extends { x: number; y: number; angle?: number }>(from: T, to: T, pctElapsed: number): T {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const dAngle = (to.angle ?? 0) - (from.angle ?? 0);
+function lerpShip(from: Ship, to: Ship, pctElapsed: number) {
   return {
-    ...from,
-    x: from.x + dx * pctElapsed,
-    y: from.y + dy * pctElapsed,
-    angle: (from.angle ?? 0) + dAngle * pctElapsed,
+    player: from.player,
+    x: from.x + (to.x - from.x) * pctElapsed,
+    y: from.y + (to.y - from.y) * pctElapsed,
+    angle: from.angle + (to.angle - from.angle) * pctElapsed,
+    hitCount: pctElapsed < 0.5 ? from.hitCount : to.hitCount,
+  };
+}
+
+function lerpCannonBall(from: CannonBall, to: CannonBall, pctElapsed: number) {
+  return {
+    id: from.id,
+    x: from.x + (to.x - from.x) * pctElapsed,
+    y: from.y + (to.y - from.y) * pctElapsed,
   };
 }

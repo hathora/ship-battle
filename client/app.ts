@@ -1,7 +1,7 @@
 import { Texture, Application, Sprite, AnimatedSprite, TilingSprite } from "pixi.js";
+import { InterpolationBuffer } from "interpolation-buffer";
 import { HathoraClient, UpdateArgs } from "./.hathora/client";
 import { Orientation, PlayerState } from "./.hathora/types";
-import { StateBuffer } from "./stateBuffer";
 
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;
@@ -27,13 +27,13 @@ async function setupApp() {
   }
   const token = sessionStorage.getItem("token")!;
   const user = HathoraClient.getUserFromToken(token);
-  let buffer: StateBuffer<PlayerState> | undefined;
+  let buffer: InterpolationBuffer<PlayerState> | undefined;
   const connection = await getClient(token, ({ state, updatedAt }) => {
     if (state.ships.find((ship) => ship.player === user.id) === undefined) {
       connection.joinGame({});
     }
     if (buffer === undefined) {
-      buffer = new StateBuffer<PlayerState>(state, lerp);
+      buffer = new InterpolationBuffer<PlayerState>(state, 100, lerp);
     } else {
       buffer.enqueue(state, updatedAt);
     }

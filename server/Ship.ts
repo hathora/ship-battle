@@ -16,7 +16,6 @@ export class InternalShip {
   public velocity = 0;
   public hitCount = 0;
   public lastFiredAt = 0;
-  public _modCnt = 0;
 
   public constructor(public player: UserId, x: number, y: number) {
     this.body = new Polygon(x, y, [
@@ -33,7 +32,6 @@ export class InternalShip {
     }
     this.orientation = orientation;
     this.accelerating = accelerating;
-    this._modCnt++;
     return true;
   }
 
@@ -45,21 +43,17 @@ export class InternalShip {
       return false;
     }
     this.lastFiredAt = time;
-    this._modCnt++;
     return true;
   }
 
-  public update(timeDelta: number): boolean {
+  public update(timeDelta: number) {
     if (this.hitCount === MAX_SHIP_HITS) {
       return false;
     }
-    const oldModCnt = this._modCnt;
     if (this.orientation === Orientation.LEFT) {
       this.body.angle -= SHIP_ANGULAR_SPEED * timeDelta;
-      this._modCnt++;
     } else if (this.orientation === Orientation.RIGHT) {
       this.body.angle += SHIP_ANGULAR_SPEED * timeDelta;
-      this._modCnt++;
     }
     if (this.accelerating) {
       this.velocity = Math.min(this.velocity + SHIP_ACCELERATION, SHIP_MAX_VELOCITY);
@@ -69,21 +63,17 @@ export class InternalShip {
     if (this.velocity > 0) {
       this.body.x += Math.cos(this.body.angle) * this.velocity * timeDelta;
       this.body.y += Math.sin(this.body.angle) * this.velocity * timeDelta;
-      this._modCnt++;
     }
-    return this._modCnt > oldModCnt;
   }
 
   public handleCollision() {
     if (this.hitCount < MAX_SHIP_HITS) {
       this.hitCount++;
-      this._modCnt++;
     }
   }
 
   public die() {
     this.hitCount = MAX_SHIP_HITS;
-    this._modCnt++;
   }
 
   public toPlayerState(): Ship {

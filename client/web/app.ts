@@ -1,7 +1,7 @@
 import { Texture, Application, Sprite, AnimatedSprite, TilingSprite } from "pixi.js";
 import { InterpolationBuffer } from "interpolation-buffer";
-import { HathoraClient, UpdateArgs } from "./.hathora/client";
-import { Orientation, Ship, CannonBall, PlayerState } from "../api/types";
+import { HathoraClient, UpdateArgs } from "../.hathora/client";
+import { Orientation, Ship, CannonBall, PlayerState } from "../../api/types";
 
 const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;

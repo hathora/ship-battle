@@ -38,11 +38,11 @@ export class Impl implements Methods<InternalState> {
     if (ship === undefined) {
       return Response.error("Not joined game");
     }
-    if (!ship.fire(ctx.time())) {
+    if (!ship.fire(ctx.time)) {
       return Response.error("Invalid action");
     }
-    state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, Math.PI / 2));
-    state.cannonBalls.push(createCannonBall(ctx.randInt(), ship, -Math.PI / 2));
+    state.cannonBalls.push(createCannonBall(ctx.chance.integer({ min: 0, max: 1e6 }), ship, Math.PI / 2));
+    state.cannonBalls.push(createCannonBall(ctx.chance.integer({ min: 0, max: 1e6 }), ship, -Math.PI / 2));
     return Response.ok();
   }
   getUserState(state: InternalState, userId: UserId): PlayerState {
@@ -78,7 +78,11 @@ export class Impl implements Methods<InternalState> {
 }
 
 function createShip(player: UserId, ctx: Context) {
-  return new InternalShip(player, ctx.randInt(MAP_WIDTH), ctx.randInt(MAP_HEIGHT));
+  return new InternalShip(
+    player,
+    ctx.chance.integer({ min: 0, max: MAP_WIDTH }),
+    ctx.chance.integer({ min: 0, max: MAP_HEIGHT })
+  );
 }
 
 function createCannonBall(id: number, ship: InternalShip, dAngle: number) {

@@ -106,7 +106,7 @@ async function getClient(token: string, onStateChange: (args: UpdateArgs) => voi
   if (location.pathname.length > 1) {
     return client.connectExisting(token, location.pathname.split("/").pop()!, onStateChange, console.error);
   } else {
-    const connection = await client.connectNew(token, {}, onStateChange, console.error);
+    const connection = await client.connectNew(token, onStateChange, console.error);
     history.pushState({}, "", `/${connection.stateId}`);
     return connection;
   }

@@ -6,7 +6,7 @@ const SHIP_HEIGHT = 66;
 const SHIP_ACCELERATION = 5;
 const SHIP_MAX_VELOCITY = 200;
 const SHIP_ANGULAR_SPEED = 0.5;
-const SHIP_RELOAD_TIME = 5000;
+const SHIP_RELOAD_TIME = 50;
 const MAX_SHIP_HITS = 3;
 
 export class InternalShip {

@@ -58,14 +58,11 @@ export class Impl implements Methods<InternalState> {
         ship.die();
       }
     });
-    state.cannonBalls.forEach((cannonBall, idx) => {
+    state.cannonBalls = state.cannonBalls.filter((cannonBall) => {
       cannonBall.update(timeDelta);
       const { x, y } = cannonBall.body;
-      if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) {
-        state.cannonBalls.splice(idx, 1);
-      }
+      return x >= 0 && y >= 0 && x < MAP_WIDTH && y < MAP_HEIGHT;
     });
-
     state.ships.forEach((ship) => {
       state.cannonBalls.forEach((cannonBall, idx) => {
         if (ship.player !== cannonBall.firedBy && ship.body.collides(cannonBall.body)) {

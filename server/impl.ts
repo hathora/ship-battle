@@ -20,6 +20,9 @@ export class Impl implements Methods<InternalState> {
     if (state.ships.find((s) => s.player === userId) !== undefined) {
       return Response.error("Already joined");
     }
+    if (state.ships.length >= 6) {
+      return Response.error("Room is full");
+    }
     state.ships.push(createShip(userId, ctx));
     return Response.ok();
   }

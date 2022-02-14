@@ -1,5 +1,7 @@
 Built using https://github.com/hathora/hathora
 
+Assets from https://www.kenney.nl/assets/pirate-pack
+
 Try it at https://ship-battle.surge.sh/
 
 ### Instructions

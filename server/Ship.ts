@@ -1,5 +1,5 @@
+import { System } from "detect-collisions";
 import { UserId, Orientation, Ship } from "../api/types";
-import { Polygon } from "detect-collisions";
 
 const SHIP_WIDTH = 113;
 const SHIP_HEIGHT = 66;
@@ -17,12 +17,12 @@ export class InternalShip {
   public hitCount = 0;
   public lastFiredAt = 0;
 
-  public constructor(public player: UserId, x: number, y: number) {
-    this.body = new Polygon(x, y, [
-      [-SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
-      [SHIP_WIDTH / 2, -SHIP_HEIGHT / 2],
-      [SHIP_WIDTH / 2, SHIP_HEIGHT / 2],
-      [-SHIP_WIDTH / 2, SHIP_HEIGHT / 2],
+  public constructor(public player: UserId, system: System, x: number, y: number) {
+    this.body = system.createPolygon({ x, y }, [
+      { x: -SHIP_WIDTH / 2, y: -SHIP_HEIGHT / 2 },
+      { x: SHIP_WIDTH / 2, y: -SHIP_HEIGHT / 2 },
+      { x: SHIP_WIDTH / 2, y: SHIP_HEIGHT / 2 },
+      { x: -SHIP_WIDTH / 2, y: SHIP_HEIGHT / 2 },
     ]);
   }
 
@@ -51,9 +51,9 @@ export class InternalShip {
       return false;
     }
     if (this.orientation === Orientation.LEFT) {
-      this.body.angle -= SHIP_ANGULAR_SPEED * timeDelta;
+      this.body.setAngle(this.body.angle - SHIP_ANGULAR_SPEED * timeDelta);
     } else if (this.orientation === Orientation.RIGHT) {
-      this.body.angle += SHIP_ANGULAR_SPEED * timeDelta;
+      this.body.setAngle(this.body.angle + SHIP_ANGULAR_SPEED * timeDelta);
     }
     if (this.accelerating) {
       this.velocity = Math.min(this.velocity + SHIP_ACCELERATION, SHIP_MAX_VELOCITY);
@@ -61,8 +61,10 @@ export class InternalShip {
       this.velocity = Math.max(this.velocity - SHIP_ACCELERATION, 0);
     }
     if (this.velocity > 0) {
-      this.body.x += Math.cos(this.body.angle) * this.velocity * timeDelta;
-      this.body.y += Math.sin(this.body.angle) * this.velocity * timeDelta;
+      this.body.setPosition(
+        this.body.pos.x + Math.cos(this.body.angle) * this.velocity * timeDelta,
+        this.body.pos.y + Math.sin(this.body.angle) * this.velocity * timeDelta
+      );
     }
   }
 
@@ -77,6 +79,12 @@ export class InternalShip {
   }
 
   public toPlayerState(): Ship {
-    return { player: this.player, x: this.body.x, y: this.body.y, angle: this.body.angle, hitCount: this.hitCount };
+    return {
+      player: this.player,
+      x: this.body.pos.x,
+      y: this.body.pos.y,
+      angle: this.body.angle,
+      hitCount: this.hitCount,
+    };
   }
 }

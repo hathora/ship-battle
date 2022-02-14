@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "dependencies": {
-    "detect-collisions": "^2.5.6"
+    "detect-collisions": "^3.2.3"
   },
   "devDependencies": {
     "typescript": "^4.3.4"

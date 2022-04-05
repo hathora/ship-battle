@@ -7,7 +7,7 @@ const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;
 
 type EntityId = string | number;
-const client = new HathoraClient(import.meta.env.VITE_APP_ID);
+const client = new HathoraClient();
 const entities: Map<EntityId, Sprite> = new Map();
 const waterTexture = Texture.from("water.png");
 const shipTextures = [...Array(4)].map((_, i) => Texture.from(`ship${i}.png`));
@@ -104,11 +104,11 @@ async function setupApp() {
 
 async function getClient(token: string, onStateChange: (args: UpdateArgs) => void) {
   if (location.pathname.length > 1) {
-    return client.connectExisting(token, location.pathname.split("/").pop()!, onStateChange, console.error);
+    return client.connect(token, location.pathname.split("/").pop()!, onStateChange, console.error);
   } else {
-    const connection = await client.connectNew(token, onStateChange, console.error);
-    history.pushState({}, "", `/${connection.stateId}`);
-    return connection;
+    const stateId = await client.create(token, {});
+    history.pushState({}, "", `/${stateId}`);
+    return client.connect(token, location.pathname.split("/").pop()!, onStateChange, console.error);
   }
 }
 

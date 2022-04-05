@@ -1,6 +1,13 @@
 import { Methods, Context } from "./.hathora/methods";
 import { Response } from "../api/base";
-import { UserId, PlayerState, IFireCannonRequest, ISetOrientationRequest, IJoinGameRequest } from "../api/types";
+import {
+  UserId,
+  PlayerState,
+  IInitializeRequest,
+  IFireCannonRequest,
+  ISetOrientationRequest,
+  IJoinGameRequest,
+} from "../api/types";
 import { InternalShip } from "./Ship";
 import { InternalCannonBall } from "./CannonBall";
 
@@ -13,8 +20,8 @@ const MAP_WIDTH = 1200;
 const MAP_HEIGHT = 900;
 
 export class Impl implements Methods<InternalState> {
-  initialize(userId: UserId, ctx: Context): InternalState {
-    return { ships: [createShip(userId, ctx)], cannonBalls: [] };
+  initialize(ctx: Context, args: IInitializeRequest): InternalState {
+    return { ships: [], cannonBalls: [] };
   }
   joinGame(state: InternalState, userId: UserId, ctx: Context, request: IJoinGameRequest): Response {
     if (state.ships.find((s) => s.player === userId) !== undefined) {

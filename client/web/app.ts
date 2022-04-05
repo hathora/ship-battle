@@ -108,7 +108,7 @@ async function getClient(token: string, onStateChange: (args: UpdateArgs) => voi
   } else {
     const stateId = await client.create(token, {});
     history.pushState({}, "", `/${stateId}`);
-    return client.connect(token, location.pathname.split("/").pop()!, onStateChange, console.error);
+    return client.connect(token, stateId, onStateChange, console.error);
   }
 }
 

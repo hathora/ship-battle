@@ -28,14 +28,14 @@ async function setupApp() {
   const token = sessionStorage.getItem("token")!;
   const user = HathoraClient.getUserFromToken(token);
   let buffer: InterpolationBuffer<PlayerState> | undefined;
-  const connection = await getClient(token, ({ state, updatedAt }) => {
+  const connection = await getClient(token, ({ state, events, updatedAt }) => {
     if (state.ships.find((ship) => ship.player === user.id) === undefined) {
       connection.joinGame({});
     }
     if (buffer === undefined) {
       buffer = new InterpolationBuffer<PlayerState>(state, 100, lerp);
     } else {
-      buffer.enqueue(state, updatedAt);
+      buffer.enqueue(state, events, updatedAt);
     }
   });
 
@@ -70,7 +70,7 @@ async function setupApp() {
     if (buffer === undefined) {
       return;
     }
-    const state = buffer.getInterpolatedState(Date.now());
+    const { state } = buffer.getInterpolatedState(Date.now());
     const updatedEntites: Set<EntityId> = new Set();
     function handleEntity(id: EntityId, x: number, y: number, angle: number, spriteGenerator: () => Sprite) {
       updatedEntites.add(id);
